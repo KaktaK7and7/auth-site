@@ -3,19 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Регистрация</title>
-  <link rel="stylesheet" href="/style.css" />
+  <title>Регистрация — Ziren</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Регистрация</h1>
-    <form action="/register" method="POST">
-      <input type="text" name="username" placeholder="Имя пользователя" required />
-      <input type="email" name="email" placeholder="Email" required />
-      <input type="password" name="password" placeholder="Пароль" required />
-      <button class="btn" type="submit">Зарегистрироваться</button>
-    </form>
-    <p><a href="/login.html">Уже есть аккаунт? Войти</a></p>
-  </div>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="brand">
+        <img src="images/Ziren.png" alt="Ziren logo" class="brand-logo" />
+        <span>Ziren</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="assistant.html">Ассистент</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="btn btn-secondary" href="login.html">Войти</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="auth-section container">
+      <div class="auth-card">
+        <span class="section-kicker">Создание аккаунта</span>
+        <h1>Регистрация</h1>
+        <p class="auth-subtitle">
+          Создай аккаунт Ziren, чтобы получить доступ к сайту, подпискам и будущим функциям.
+        </p>
+
+        <form action="/register" method="POST" class="auth-form">
+          <input type="text" name="username" placeholder="Имя пользователя" required />
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="password" name="password" placeholder="Пароль" required />
+          <button class="btn btn-primary" type="submit">Зарегистрироваться</button>
+        </form>
+
+        <p class="auth-switch">
+          Уже есть аккаунт?
+          <a href="login.html">Войти</a>
+        </p>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

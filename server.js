@@ -150,6 +150,11 @@ app.post("/login", async (req, res) => {
       return res.status(400).send("Неверный email или пароль");
     }
 
+    await pool.query(
+      "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1",
+      [user.id]
+    );
+
     req.session.user = {
       id: user.id,
       username: user.username,
@@ -163,34 +168,166 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", requireAuth, (req, res) => {
-  const { username, email } = req.session.user;
+app.get("/profile", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
 
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="ru">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Профиль</title>
-      <link rel="stylesheet" href="/style.css" />
-    </head>
-    <body>
-      <div class="container">
-        <h1>Профиль</h1>
-        <p><strong>Имя:</strong> ${username}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <a class="btn" href="/logout">Выйти</a>
-      </div>
-    </body>
-    </html>
-  `);
+    const userResult = await pool.query(
+      `SELECT id, username, email, created_at, avatar_url, last_login_at
+       FROM users
+       WHERE id = $1`,
+      [userId]
+    );
+
+    const statsResult = await pool.query(
+      `SELECT COUNT(*)::int AS total_commands
+       FROM user_commands
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    const frequentCommandsResult = await pool.query(
+      `SELECT command_text, COUNT(*)::int AS uses
+       FROM user_commands
+       WHERE user_id = $1
+       GROUP BY command_text
+       ORDER BY uses DESC, command_text ASC
+       LIMIT 5`,
+      [userId]
+    );
+
+    const user = userResult.rows[0];
+    const totalCommands = statsResult.rows[0]?.total_commands || 0;
+    const frequentCommands = frequentCommandsResult.rows;
+
+    const avatarUrl = user.avatar_url || "/images/Ziren.png";
+
+    const frequentCommandsHtml = frequentCommands.length
+      ? frequentCommands.map(cmd => `
+          <div class="stat-list-item">
+            <span>${cmd.command_text}</span>
+            <strong>${cmd.uses} раз</strong>
+          </div>
+        `).join("")
+      : `<p class="empty-text">Пока команд нет</p>`;
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="ru">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Профиль — Ziren</title>
+        <link rel="stylesheet" href="/style.css" />
+      </head>
+      <body>
+        <div class="bg-glow glow-1"></div>
+        <div class="bg-glow glow-2"></div>
+
+        <header class="header">
+          <div class="container nav">
+            <a href="/" class="brand">
+              <img src="/images/Ziren.png" class="brand-logo" />
+              <span>Ziren</span>
+            </a>
+
+            <nav class="nav-links">
+              <a href="/">Главная</a>
+              <a href="/assistant.html">Ассистент</a>
+              <a href="/profile" class="active-link">Профиль</a>
+            </nav>
+
+            <div class="nav-actions">
+              <a class="btn btn-secondary" href="/logout">Выйти</a>
+            </div>
+          </div>
+        </header>
+
+        <main class="profile-page">
+          <section class="container profile-layout">
+
+            <div class="profile-main-card">
+              <div class="profile-top">
+                <div class="profile-avatar-wrap">
+                  <img src="${avatarUrl}" class="profile-avatar" />
+                </div>
+
+                <div class="profile-user-info">
+                  <span class="section-kicker">Личный кабинет</span>
+                  <h1>${user.username}</h1>
+                  <p>${user.email}</p>
+                  <div class="profile-meta">
+                    <span>Регистрация: ${new Date(user.created_at).toLocaleDateString("ru-RU")}</span>
+                    <span>Последний вход: ${user.last_login_at ? new Date(user.last_login_at).toLocaleString("ru-RU") : "нет данных"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-actions">
+                <form action="/upload-avatar" method="POST" class="avatar-form">
+                  <input type="text" name="avatar_url" placeholder="Ссылка на аватарку" required />
+                  <button class="btn btn-primary" type="submit">Сменить аватар</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="profile-stats-grid">
+              <div class="profile-stat-card">
+                <span class="section-kicker">Статистика</span>
+                <h2>${totalCommands}</h2>
+                <p>Всего команд</p>
+              </div>
+
+              <div class="profile-stat-card">
+                <span class="section-kicker">Активность</span>
+                <h2>${frequentCommands.length}</h2>
+                <p>Команд в топе</p>
+              </div>
+            </div>
+
+            <div class="profile-wide-card">
+              <div class="section-head">
+                <span class="section-kicker">Частые команды</span>
+                <h2>Топ команд</h2>
+              </div>
+              <div class="stat-list">
+                ${frequentCommandsHtml}
+              </div>
+            </div>
+
+          </section>
+        </main>
+      </body>
+      </html>
+    `);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Ошибка профиля");
+  }
 });
 
 app.get("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/");
   });
+});
+
+app.post("/upload-avatar", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { avatar_url } = req.body;
+
+    await pool.query(
+      "UPDATE users SET avatar_url = $1 WHERE id = $2",
+      [avatar_url, userId]
+    );
+
+    res.redirect("/profile");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Ошибка");
+  }
 });
 
 initDb()

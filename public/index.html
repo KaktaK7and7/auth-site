@@ -3,17 +3,203 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Главная</title>
-  <link rel="stylesheet" href="/style.css" />
+  <title>Ziren</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Добро пожаловать</h1>
-    <p>Это сайт с регистрацией и входом.</p>
-    <div class="buttons">
-      <a class="btn" href="/register.html">Регистрация</a>
-      <a class="btn" href="/login.html">Вход</a>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="brand">
+        <img src="images/Ziren.png" alt="Ziren logo" class="brand-logo" />
+        <span>Ziren</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="assistant.html">Ассистент</a>
+        <a href="#community">Сообщество</a>
+        <a href="#feedback">Обратная связь</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="btn btn-secondary" href="login.html">Войти</a>
+      </div>
     </div>
-  </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div class="hero-text">
+        <span class="badge">AI ecosystem</span>
+        <h1>Ziren</h1>
+        <p class="hero-subtitle">
+          Технологическая экосистема нового поколения. Умные инструменты,
+          автоматизация, AI и цифровой стиль в одном пространстве.
+        </p>
+
+        <div class="hero-buttons">
+          <a class="btn btn-primary" href="assistant.html">Открыть Ziren_Assistant</a>
+          <a class="btn btn-ghost" href="#about">Узнать больше</a>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="hero-card-inner">
+          <img src="images/Ziren.png" alt="Ziren" class="hero-logo" />
+          <p class="hero-card-title">Ziren Core</p>
+          <p class="hero-card-text">
+            Бренд, вокруг которого строится продукт, комьюнити и будущее ассистента.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="section container">
+      <div class="section-head">
+        <span class="section-kicker">О проекте</span>
+        <h2>Что такое Ziren</h2>
+        <p>
+          Ziren — это платформа и бренд, вокруг которого развивается экосистема
+          умных решений: ассистент, сообщество, подписки, пользовательский контент
+          и будущие модули.
+        </p>
+      </div>
+
+      <div class="grid-4">
+        <article class="feature-card">
+          <h3>AI ядро</h3>
+          <p>Интеграции с нейросетями и умными сценариями работы.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Голос</h3>
+          <p>Голосовые команды и взаимодействие с ассистентом.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Автоматизация</h3>
+          <p>Скрипты, действия, системные команды и управление.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Комьюнити</h3>
+          <p>Пользователи, видео, идеи, предложения и рост проекта.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section container">
+      <div class="promo-panel">
+        <div>
+          <span class="section-kicker">Продукт</span>
+          <h2>Ziren_Assistant</h2>
+          <p>
+            Персональный AI-ассистент для компьютера: голос, команды,
+            нейросети, Telegram и автоматизация.
+          </p>
+        </div>
+        <a class="btn btn-primary" href="assistant.html">Перейти к ассистенту</a>
+      </div>
+    </section>
+
+    <section class="ticker-section">
+      <div class="ticker-label">Уже с нами</div>
+      <div class="ticker-wrap">
+        <div class="ticker-track">
+          <span>neo_user</span>
+          <span>ziren_fan</span>
+          <span>assistant_pro</span>
+          <span>cyber_vlad</span>
+          <span>night_core</span>
+          <span>voice_runner</span>
+          <span>neo_user</span>
+          <span>ziren_fan</span>
+          <span>assistant_pro</span>
+          <span>cyber_vlad</span>
+          <span>night_core</span>
+          <span>voice_runner</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="community" class="section container">
+      <div class="section-head">
+        <span class="section-kicker">Сообщество</span>
+        <h2>Контент от пользователей</h2>
+        <p>
+          Здесь позже можно выводить TikTok-видео, клипы, обзоры и демонстрации,
+          связанные с ассистентом.
+        </p>
+      </div>
+
+      <div class="video-grid">
+        <div class="video-card">
+          <div class="video-screen">Видео 1</div>
+          <p>Демо от пользователя</p>
+        </div>
+        <div class="video-card">
+          <div class="video-screen">Видео 2</div>
+          <p>Использование ассистента</p>
+        </div>
+        <div class="video-card">
+          <div class="video-screen">Видео 3</div>
+          <p>Обзор функций</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container">
+      <div class="section-head">
+        <span class="section-kicker">Отзывы</span>
+        <h2>Что говорят пользователи</h2>
+      </div>
+
+      <div class="reviews-grid">
+        <article class="review-card">
+          <p>«Очень стильный и реально полезный ассистент. Видно потенциал.»</p>
+          <span>— user_014</span>
+        </article>
+        <article class="review-card">
+          <p>«Управление голосом и Telegram — это вообще разнос.»</p>
+          <span>— cyberfox</span>
+        </article>
+        <article class="review-card">
+          <p>«Хочу видеть, как проект растёт. Атмосфера кайф.»</p>
+          <span>— nightbyte</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="feedback" class="section container">
+      <div class="feedback-panel">
+        <div>
+          <span class="section-kicker">Обратная связь</span>
+          <h2>Есть идея, баг или предложение?</h2>
+          <p>
+            Позже здесь можно подключить форму отправки багов, предложений,
+            отзывов и реферальную систему.
+          </p>
+        </div>
+        <a class="btn btn-secondary" href="register.html">Присоединиться</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong>Ziren</strong>
+        <p>Технологическая экосистема и AI-продукты нового поколения.</p>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Главная</a>
+        <a href="assistant.html">Ассистент</a>
+        <a href="login.html">Войти</a>
+        <a href="register.html">Регистрация</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>

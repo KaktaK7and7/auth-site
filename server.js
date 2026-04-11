@@ -8,7 +8,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const isProduction = process.env.NODE_ENV === "production";
+
 app.set("trust proxy", 1);
 
 // Railway usually provides DATABASE_URL automatically from Postgres
@@ -38,9 +38,10 @@ app.use(
     proxy: true,
     cookie: {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 30
+      secure: true,
+      sameSite: "none",
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+      path: "/"
     }
   })
 );
@@ -54,6 +55,16 @@ async function initDb() {
       password_hash VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;
   `);
 
   await pool.query(`
@@ -79,6 +90,15 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS IDX_user_sessions_expire
     ON user_sessions (expire);
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_commands (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      command_text VARCHAR(255) NOT NULL,
+      used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 }
 
 function requireAuth(req, res, next) {
@@ -92,16 +112,31 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+app.get("/api/me", (req, res) => {
+  if (!req.session.user) {
+    return res.json({ loggedIn: false });
+  }
+
+  return res.json({
+    loggedIn: true,
+    user: {
+      id: req.session.user.id,
+      username: req.session.user.username,
+      email: req.session.user.email
+    }
+  });
+});
+
 app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).send("Заполни все поля");
+      return res.redirect("/register.html?error=Заполни%20все%20поля");
     }
 
     if (password.length < 6) {
-      return res.status(400).send("Пароль должен быть не короче 6 символов");
+      return res.redirect("/register.html?error=Пароль%20должен%20быть%20не%20короче%206%20символов");
     }
 
     const existing = await pool.query(
@@ -110,23 +145,43 @@ app.post("/register", async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
-      return res.status(400).send("Пользователь с таким email уже существует");
+      return res.redirect("/register.html?error=Пользователь%20с%20таким%20email%20уже%20существует");
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email",
+      `INSERT INTO users (username, email, password_hash)
+       VALUES ($1, $2, $3)
+       RETURNING id, username, email`,
       [username, email, passwordHash]
     );
 
-    req.session.user = {
-      id: result.rows[0].id,
-      username: result.rows[0].username,
-      email: result.rows[0].email
-    };
+    const newUser = result.rows[0];
 
-    res.redirect("/profile");
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error("Session regenerate error:", err);
+        return res.status(500).send("Ошибка сессии");
+      }
+
+      req.session.user = {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email
+      };
+
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 30;
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error("Session save error:", saveErr);
+          return res.status(500).send("Ошибка сохранения сессии");
+        }
+
+        res.redirect("/profile");
+      });
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Ошибка сервера при регистрации");
@@ -174,6 +229,8 @@ app.post("/login", async (req, res) => {
         email: user.email
       };
 
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 30;
+
       req.session.save((saveErr) => {
         if (saveErr) {
           console.error("Session save error:", saveErr);
@@ -218,13 +275,20 @@ app.get("/profile", requireAuth, async (req, res) => {
     );
 
     const user = userResult.rows[0];
+
+    if (!user) {
+      req.session.destroy(() => {
+        res.redirect("/login.html");
+      });
+      return;
+    }
+
     const totalCommands = statsResult.rows[0]?.total_commands || 0;
     const frequentCommands = frequentCommandsResult.rows;
-
     const avatarUrl = user.avatar_url || "/images/Ziren.png";
 
     const frequentCommandsHtml = frequentCommands.length
-      ? frequentCommands.map(cmd => `
+      ? frequentCommands.map((cmd) => `
           <div class="stat-list-item">
             <span>${cmd.command_text}</span>
             <strong>${cmd.uses} раз</strong>
@@ -248,7 +312,7 @@ app.get("/profile", requireAuth, async (req, res) => {
         <header class="header">
           <div class="container nav">
             <a href="/" class="brand">
-              <img src="/images/Ziren.png" class="brand-logo" />
+              <img src="/images/Ziren.png" class="brand-logo" alt="Ziren logo" />
               <span>Ziren</span>
             </a>
 
@@ -270,7 +334,7 @@ app.get("/profile", requireAuth, async (req, res) => {
             <div class="profile-main-card">
               <div class="profile-top">
                 <div class="profile-avatar-wrap">
-                  <img src="${avatarUrl}" class="profile-avatar" />
+                  <img src="${avatarUrl}" class="profile-avatar" alt="avatar" />
                 </div>
 
                 <div class="profile-user-info">
@@ -321,28 +385,20 @@ app.get("/profile", requireAuth, async (req, res) => {
       </body>
       </html>
     `);
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Ошибка профиля");
   }
 });
 
-app.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Logout error:", err);
-    }
-
-    res.clearCookie("ziren.sid");
-    res.redirect("/");
-  });
-});
-
 app.post("/upload-avatar", requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
     const { avatar_url } = req.body;
+
+    if (!avatar_url) {
+      return res.redirect("/profile");
+    }
 
     await pool.query(
       "UPDATE users SET avatar_url = $1 WHERE id = $2",
@@ -354,6 +410,23 @@ app.post("/upload-avatar", requireAuth, async (req, res) => {
     console.error(error);
     res.status(500).send("Ошибка");
   }
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+    }
+
+    res.clearCookie("ziren.sid", {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    });
+
+    res.redirect("/");
+  });
 });
 
 initDb()

@@ -8,6 +8,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.set("trust proxy", 1);
 
 // Railway usually provides DATABASE_URL automatically from Postgres
 const pool = new Pool({
@@ -30,10 +31,12 @@ app.use(
     secret: process.env.SESSION_SECRET || "super-secret-key-change-me",
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
-      secure: false,
-      maxAge: 1000 * 60 * 60 * 24 * 7
+      secure: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 30
     }
   })
 );
@@ -150,18 +153,35 @@ app.post("/login", async (req, res) => {
       return res.redirect("/login.html?error=Неверный%20email%20или%20пароль");
     }
 
+    // ✅ обновляем последний вход
     await pool.query(
       "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1",
       [user.id]
     );
 
-    req.session.user = {
-      id: user.id,
-      username: user.username,
-      email: user.email
-    };
+    // ✅ ВАЖНО — правильная работа с сессией
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Ошибка сессии");
+      }
 
-    res.redirect("/profile");
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      };
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error(saveErr);
+          return res.status(500).send("Ошибка сохранения сессии");
+        }
+
+        res.redirect("/profile");
+      });
+    });
+
   } catch (error) {
     console.error(error);
     res.status(500).send("Ошибка сервера при входе");

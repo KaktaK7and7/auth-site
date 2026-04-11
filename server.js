@@ -8,6 +8,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === "production";
 app.set("trust proxy", 1);
 
 // Railway usually provides DATABASE_URL automatically from Postgres
@@ -24,17 +25,20 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
   session({
+    name: "ziren.sid",
     store: new pgSession({
       pool: pool,
-      tableName: "user_sessions"
+      tableName: "user_sessions",
+      createTableIfMissing: true
     }),
     secret: process.env.SESSION_SECRET || "super-secret-key-change-me",
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     proxy: true,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 30
     }
@@ -153,16 +157,14 @@ app.post("/login", async (req, res) => {
       return res.redirect("/login.html?error=Неверный%20email%20или%20пароль");
     }
 
-    // ✅ обновляем последний вход
     await pool.query(
       "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1",
       [user.id]
     );
 
-    // ✅ ВАЖНО — правильная работа с сессией
     req.session.regenerate((err) => {
       if (err) {
-        console.error(err);
+        console.error("Session regenerate error:", err);
         return res.status(500).send("Ошибка сессии");
       }
 
@@ -174,14 +176,13 @@ app.post("/login", async (req, res) => {
 
       req.session.save((saveErr) => {
         if (saveErr) {
-          console.error(saveErr);
+          console.error("Session save error:", saveErr);
           return res.status(500).send("Ошибка сохранения сессии");
         }
 
         res.redirect("/profile");
       });
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Ошибка сервера при входе");
@@ -328,7 +329,12 @@ app.get("/profile", requireAuth, async (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-  req.session.destroy(() => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+    }
+
+    res.clearCookie("ziren.sid");
     res.redirect("/");
   });
 });

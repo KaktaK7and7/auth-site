@@ -754,3 +754,11 @@ main,
     width: 100%;
   }
 }
+.auth-error {
+  min-height: 22px;
+  margin: 0 0 16px;
+  color: #ff7a7a;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}

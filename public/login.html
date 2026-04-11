@@ -37,6 +37,9 @@
           Войди в аккаунт Ziren, чтобы получить доступ к экосистеме и функциям ассистента.
         </p>
 
+        <!-- 🔴 ВОТ БЛОК ОШИБКИ -->
+        <p id="login-error" class="auth-error"></p>
+
         <form action="/login" method="POST" class="auth-form">
           <input type="email" name="email" placeholder="Email" required />
           <input type="password" name="password" placeholder="Пароль" required />
@@ -50,5 +53,16 @@
       </div>
     </section>
   </main>
+
+  <!-- 🔥 СКРИПТ ДЛЯ ОШИБКИ -->
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    const errorBox = document.getElementById("login-error");
+
+    if (error && errorBox) {
+      errorBox.textContent = decodeURIComponent(error);
+    }
+  </script>
 </body>
 </html>

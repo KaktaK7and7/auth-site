@@ -131,7 +131,7 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).send("Заполни email и пароль");
+      return res.redirect("/login.html?error=Заполни%20email%20и%20пароль");
     }
 
     const result = await pool.query(
@@ -140,14 +140,14 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).send("Неверный email или пароль");
+      return res.redirect("/login.html?error=Неверный%20email%20или%20пароль");
     }
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isMatch) {
-      return res.status(400).send("Неверный email или пароль");
+      return res.redirect("/login.html?error=Неверный%20email%20или%20пароль");
     }
 
     await pool.query(

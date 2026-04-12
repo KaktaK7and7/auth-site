@@ -439,3 +439,10 @@ initDb()
     console.error("DB init error:", err);
     process.exit(1);
   });
+
+app.use((req, res, next) => {
+  if (req.hostname.includes("railway.app")) {
+    res.set("X-Robots-Tag", "noindex");
+  }
+  next();
+});

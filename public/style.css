@@ -762,3 +762,43 @@ main,
   line-height: 1.5;
   text-align: center;
 }
+
+.footer {
+  margin-top: 80px;
+  padding: 40px 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.4);
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-links a {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}

@@ -170,7 +170,7 @@ if (toggle && widget) {
   };
 }
 
-document.body.classList.toggle("chat-open");
+
 
 // отправка сообщения
 async function send(msg) {

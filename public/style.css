@@ -189,15 +189,6 @@ main,
   transform: scale(1.05);
 }
 
-body.chat-open::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  backdrop-filter: blur(3px);
-  background: rgba(0,0,0,0.2);
-  z-index: 999;
-  pointer-events: none;
-}
 
 
 #chat-widget {

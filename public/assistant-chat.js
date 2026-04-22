@@ -58,6 +58,15 @@ function typeText(text) {
   }, 10);
 }
 
+function setActivePreset(presetName) {
+  document.querySelectorAll(".presets button").forEach(btn => {
+    btn.classList.remove("active-preset");
+    if (btn.getAttribute("data") === presetName) {
+      btn.classList.add("active-preset");
+    }
+  });
+}
+
 
 // загрузка персонажа
 async function loadPersona() {
@@ -66,6 +75,7 @@ async function loadPersona() {
 
   nameEl.textContent = d.name || "Мелисса";
   roleEl.textContent = d.identity || "";
+  setActivePreset(data.preset_name);
 }
 
 // загрузка памяти
@@ -73,7 +83,50 @@ async function loadMemory() {
   const r = await fetch("/api/assistant/memory");
   const d = await r.json();
 
-  memoryEl.textContent = JSON.stringify(d, null, 2);
+  if (!r.ok) {
+    memoryEl.innerHTML = "<div>Ошибка загрузки памяти</div>";
+    return;
+  }
+
+  const profile = d.profile || {};
+  const interests = d.interests || [];
+  const projects = d.projects || [];
+  const entities = d.entities || {};
+
+  memoryEl.innerHTML = `
+    <div class="memory-group">
+      <div class="memory-title">Профиль</div>
+      <div class="memory-item"><strong>Имя:</strong> ${profile.name || "—"}</div>
+      <div class="memory-item"><strong>Город:</strong> ${profile.city || "—"}</div>
+      <div class="memory-item"><strong>Язык:</strong> ${profile.language || "—"}</div>
+    </div>
+
+    <div class="memory-group">
+      <div class="memory-title">Интересы</div>
+      ${
+        interests.length
+          ? interests.map(x => `<div class="memory-tag">${x}</div>`).join("")
+          : `<div class="memory-item">Пока пусто</div>`
+      }
+    </div>
+
+    <div class="memory-group">
+      <div class="memory-title">Проекты</div>
+      ${
+        projects.length
+          ? projects.map(x => `<div class="memory-tag">${x}</div>`).join("")
+          : `<div class="memory-item">Пока пусто</div>`
+      }
+    </div>
+
+    <div class="memory-group">
+      <div class="memory-title">Сущности</div>
+      <div class="memory-item"><strong>Питомцы:</strong> ${(entities.pets || []).length}</div>
+      <div class="memory-item"><strong>Люди:</strong> ${(entities.people || []).length}</div>
+      <div class="memory-item"><strong>Транспорт:</strong> ${(entities.vehicles || []).length}</div>
+      <div class="memory-item"><strong>Прочее:</strong> ${(entities.other || []).length}</div>
+    </div>
+  `;
 }
 
 async function loadMessages() {
@@ -139,18 +192,17 @@ document.querySelectorAll(".presets button").forEach(btn => {
   btn.onclick = async () => {
     const preset = btn.getAttribute("data");
 
-    await fetch("/api/assistant/preset", {
+    const res = await fetch("/api/assistant/preset", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ preset_name: preset })
     });
 
-    // сначала очищаем
-    session_id = 0;
-    sessionEl.textContent = "0";
-    messages.innerHTML = "";
+    if (!res.ok) {
+      add("assistant", "Не получилось сменить характер 😔");
+      return;
+    }
 
-    // потом генерим текст
     let text = "Я изменилась 😉";
 
     if (preset === "cute") text = "Теперь я буду заботиться о тебе 💖";
@@ -160,10 +212,8 @@ document.querySelectorAll(".presets button").forEach(btn => {
     if (preset === "aggressive") text = "Ну всё, готовься 😈";
     if (preset === "calm") text = "Хорошо, давай спокойно пообщаемся.";
 
-    // теперь показываем
     add("assistant", text);
-
-    loadPersona();
+    await loadPersona();
   };
 });
 

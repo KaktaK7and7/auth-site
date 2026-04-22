@@ -166,6 +166,59 @@ main,
   color: var(--text);
 }
 
+
+#chat-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6c63ff, #7f56ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 9999;
+  transition: 0.2s ease;
+}
+
+#chat-toggle:hover {
+  transform: scale(1.05);
+}
+
+#chat-widget {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  width: 380px;
+  height: 600px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  transform: translateY(20px) scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s ease;
+  z-index: 9999;
+}
+
+#chat-widget iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* АКТИВНОЕ СОСТОЯНИЕ */
+#chat-widget.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
 .hero {
   padding: 90px 0 50px;
   display: grid;
@@ -798,6 +851,205 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ===== CHAT UI ===== */
+
+.msg {
+  padding: 12px 14px;
+  border-radius: 16px;
+  max-width: 80%;
+  animation: fadeInUp 0.25s ease;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.user {
+  background: linear-gradient(135deg, #6c63ff, #7f56ff);
+  align-self: flex-end;
+}
+
+.assistant {
+  background: #20294c;
+  align-self: flex-start;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== CHAT UI ===== */
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.topbar a {
+  color: white;
+  text-decoration: none;
+  margin-right: 12px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.card {
+  background: linear-gradient(180deg, #121933 0%, #0f1731 100%);
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.messages {
+  height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.msg {
+  padding: 12px 14px;
+  border-radius: 16px;
+  max-width: 80%;
+  animation: fadeInUp 0.25s ease;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.user {
+  background: linear-gradient(135deg, #6c63ff, #7f56ff);
+  align-self: flex-end;
+}
+
+.assistant {
+  background: #20294c;
+  align-self: flex-start;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-form {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: #0f1530;
+  color: white;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.chat-form input:focus {
+  border-color: rgba(124, 92, 255, 0.8);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.15);
+}
+
+.presets button {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: #1c2440;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.presets button:hover {
+  background: #26325b;
+}
+
+.presets button.active-preset {
+  background: linear-gradient(135deg, #6c63ff, #7f56ff);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.chat-appear {
+  animation: chatAppear 0.35s ease;
+}
+
+@keyframes chatAppear {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.memory-group {
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+}
+
+.memory-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.memory-item {
+  font-size: 13px;
+  color: #d7defd;
+  margin-bottom: 6px;
+}
+
+.memory-tag {
+  display: inline-block;
+  padding: 6px 10px;
+  margin: 4px 6px 0 0;
+  border-radius: 999px;
+  background: #1d2850;
+  color: #dfe6ff;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .messages {
+    height: 420px;
+  }
+}
+
 
 main {
   flex: 1;

@@ -196,6 +196,7 @@ body.chat-open::after {
   backdrop-filter: blur(3px);
   background: rgba(0,0,0,0.2);
   z-index: 999;
+  pointer-events: none;
 }
 
 

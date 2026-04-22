@@ -874,8 +874,15 @@ body {
 }
 
 .chat-card {
+  background: linear-gradient(180deg, #121933 0%, #0f1731 100%);
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+
   display: flex;
   flex-direction: column;
+  height: 600px;
   min-height: 600px;
 }
 
@@ -887,11 +894,32 @@ body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+
   display: flex;
   flex-direction: column;
   gap: 10px;
+
   margin-bottom: 12px;
-  padding-right: 4px;
+  padding-right: 6px;
+}
+
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 255, 0.55);
+  border-radius: 999px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 255, 0.8);
 }
 
 .msg {

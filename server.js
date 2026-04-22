@@ -5,7 +5,7 @@ const pgSession = require("connect-pg-simple")(session);
 const bcrypt = require("bcrypt");
 const { Pool } = require("pg");
 require("dotenv").config();
-
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -108,8 +108,23 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function requireAuthApi(req, res, next) {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  next();
+}
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/assistant", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "assistant.html"));
+});
+
+app.get("/assistant/chat", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "assistant-chat.html"));
 });
 
 app.get("/api/me", (req, res) => {
@@ -125,6 +140,99 @@ app.get("/api/me", (req, res) => {
       email: req.session.user.email
     }
   });
+});
+
+app.get("/api/assistant/me", requireAuthApi, async (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      user: {
+        id: req.session.user.id,
+        username: req.session.user.username,
+        email: req.session.user.email,
+      },
+    });
+  } catch (error) {
+    console.error("assistant/me error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/assistant/chat", requireAuthApi, async (req, res) => {
+  try {
+    const { message, session_id = 0 } = req.body;
+
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const response = await fetch(`${process.env.AI_SERVICE_URL}/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: req.session.user.id,
+        message,
+        session_id,
+      }),
+    });
+
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/chat error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.get("/api/assistant/persona", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/persona/${req.session.user.id}`
+    );
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/persona error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.post("/api/assistant/preset", requireAuthApi, async (req, res) => {
+  try {
+    const { preset_name } = req.body;
+
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/persona/${req.session.user.id}/preset`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ preset_name }),
+      }
+    );
+
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/preset error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.get("/api/assistant/memory", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/memory/${req.session.user.id}`
+    );
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/memory error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
 });
 
 app.post("/register", async (req, res) => {
@@ -318,7 +426,7 @@ app.get("/profile", requireAuth, async (req, res) => {
 
             <nav class="nav-links">
               <a href="/">Главная</a>
-              <a href="/assistant.html">Ассистент</a>
+              <a href="/assistant">Ассистент</a>
               <a href="/profile" class="active-link">Профиль</a>
             </nav>
 
@@ -446,3 +554,4 @@ app.use((req, res, next) => {
   }
   next();
 });
+

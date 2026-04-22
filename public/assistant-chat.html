@@ -29,61 +29,48 @@
 
   <div class="layout chat-appear">
 
-    <!-- ЧАТ -->
-    <div class="card">
+  <!-- ЧАТ -->
+  <div class="chat-card">
 
-      <div class="messages" id="messages"></div>
+    <div class="messages" id="messages"></div>
 
-      <form class="chat-form" id="form">
-        <input id="input" placeholder="Напиши..." />
-        <button type="submit">Отправить</button>
-      </form>
+    <form class="chat-form" id="form">
+      <input id="input" placeholder="Напиши..." />
+      <button type="submit">Отправить</button>
+    </form>
 
-      <div>
-        session: <span id="session">0</span>
-      </div>
-
+    <div>
+      session: <span id="session">0</span>
     </div>
 
-    <!-- ПАНЕЛЬ -->
-    <div class="card">
+  </div>
 
-      <h3>Характер</h3>
+  <!-- ПАНЕЛЬ -->
+  <div class="chat-sidebar">
 
-      <div class="presets">
-        <button data="cute">Милая</button>
-        <button data="calm">Спокойная</button>
-        <button data="spicy">Пошлая</button>
-        <button data="friend">Подруга</button>
-        <button data="shy_love">Тайно влюблена</button>
-        <button data="aggressive">Агрессивная</button>
-      </div>
+    <h3>Характер</h3>
 
-      <h3>Память</h3>
-      <div id="memory"></div>
-
+    <div class="presets">
+      <button data="cute">Милая</button>
+      <button data="calm">Спокойная</button>
+      <button data="spicy">Пошлая</button>
+      <button data="friend">Подруга</button>
+      <button data="shy_love">Тайно влюблена</button>
+      <button data="aggressive">Агрессивная</button>
     </div>
+
+    <h3>Память</h3>
+    <div id="memory"></div>
 
   </div>
 
 </div>
 
-<script src="/assistant-chat.js"></script>
-
-<div id="chat-widget">
-  <iframe src="/assistant/chat"></iframe>
 </div>
 
-<div id="chat-toggle">💬</div>
+<script src="/assistant-chat.js"></script>
 
-<script>
-  const toggle = document.getElementById("chat-toggle");
-  const widget = document.getElementById("chat-widget");
 
-  toggle.onclick = () => {
-    widget.classList.toggle("open");
-  };
-</script>
 
 </body>
 </html>

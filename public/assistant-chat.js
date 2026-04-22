@@ -1,4 +1,5 @@
 let session_id = 0;
+let typingEl = null;
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
@@ -13,10 +14,50 @@ const roleEl = document.getElementById("role");
 function add(role, text) {
   const el = document.createElement("div");
   el.className = "msg " + role;
-  el.textContent = text;
+
+  const time = new Date().toLocaleTimeString();
+
+  el.innerHTML = `
+    <div>${text}</div>
+    <div style="font-size:10px;opacity:0.5;margin-top:4px">${time}</div>
+  `;
+
   messages.appendChild(el);
   messages.scrollTop = messages.scrollHeight;
 }
+
+function showTyping() {
+  typingEl = document.createElement("div");
+  typingEl.className = "msg assistant";
+  typingEl.textContent = "Мелисса печатает...";
+  messages.appendChild(typingEl);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function hideTyping() {
+  if (typingEl) {
+    typingEl.remove();
+    typingEl = null;
+  }
+}
+
+function typeText(text) {
+  let i = 0;
+  const el = document.createElement("div");
+  el.className = "msg assistant";
+  messages.appendChild(el);
+
+  const interval = setInterval(() => {
+    el.textContent += text[i];
+    i++;
+    messages.scrollTop = messages.scrollHeight;
+
+    if (i >= text.length) {
+      clearInterval(interval);
+    }
+  }, 10);
+}
+
 
 // загрузка персонажа
 async function loadPersona() {
@@ -35,9 +76,27 @@ async function loadMemory() {
   memoryEl.textContent = JSON.stringify(d, null, 2);
 }
 
+async function loadMessages() {
+  const r = await fetch("/api/assistant/messages");
+  const data = await r.json();
+
+  if (!r.ok) return;
+
+  messages.innerHTML = "";
+
+  data.messages.forEach(m => {
+    add(m.role, m.content);
+  });
+
+  session_id = data.session_id || 0;
+  sessionEl.textContent = session_id;
+}
+
+
 // отправка сообщения
 async function send(msg) {
   add("user", msg);
+  showTyping();
 
   const r = await fetch("/api/assistant/chat", {
     method: "POST",
@@ -58,7 +117,8 @@ async function send(msg) {
   session_id = d.session_id;
   sessionEl.textContent = session_id;
 
-  add("assistant", d.answer);
+  typeText(d.answer);
+  hideTyping();
 
   loadMemory();
 }
@@ -85,9 +145,23 @@ document.querySelectorAll(".presets button").forEach(btn => {
       body: JSON.stringify({ preset_name: preset })
     });
 
+    // сначала очищаем
     session_id = 0;
     sessionEl.textContent = "0";
     messages.innerHTML = "";
+
+    // потом генерим текст
+    let text = "Я изменилась 😉";
+
+    if (preset === "cute") text = "Теперь я буду заботиться о тебе 💖";
+    if (preset === "spicy") text = "Оу... теперь будет жарко 😏";
+    if (preset === "friend") text = "Ну всё, теперь я твоя подруга 😄";
+    if (preset === "shy_love") text = "Эм... я... теперь немного другая... 👉👈";
+    if (preset === "aggressive") text = "Ну всё, готовься 😈";
+    if (preset === "calm") text = "Хорошо, давай спокойно пообщаемся.";
+
+    // теперь показываем
+    add("assistant", text);
 
     loadPersona();
   };
@@ -96,3 +170,4 @@ document.querySelectorAll(".presets button").forEach(btn => {
 // старт
 loadPersona();
 loadMemory();
+loadMessages();

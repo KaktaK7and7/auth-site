@@ -142,6 +142,20 @@ app.get("/api/me", (req, res) => {
   });
 });
 
+app.get("/api/assistant/messages", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/messages/${req.session.user.id}`
+    );
+
+    const data = await response.json();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: "failed" });
+  }
+});
+
+
 app.get("/api/assistant/me", requireAuthApi, async (req, res) => {
   try {
     res.json({

@@ -146,6 +146,25 @@ async function loadMessages() {
 }
 
 
+let isOpen = false;
+
+toggle.onclick = () => {
+  if (!isOpen) {
+    widget.classList.add("open");
+    widget.classList.remove("closing");
+    isOpen = true;
+  } else {
+    widget.classList.add("closing");
+
+    setTimeout(() => {
+      widget.classList.remove("open");
+      isOpen = false;
+    }, 200);
+  }
+};
+
+document.body.classList.toggle("chat-open");
+
 // отправка сообщения
 async function send(msg) {
   add("user", msg);

@@ -148,20 +148,27 @@ async function loadMessages() {
 
 let isOpen = false;
 
-toggle.onclick = () => {
-  if (!isOpen) {
-    widget.classList.add("open");
-    widget.classList.remove("closing");
-    isOpen = true;
-  } else {
-    widget.classList.add("closing");
+const toggle = document.getElementById("chat-toggle");
+const widget = document.getElementById("chat-widget");
 
-    setTimeout(() => {
-      widget.classList.remove("open");
-      isOpen = false;
-    }, 200);
-  }
-};
+if (toggle && widget) {
+  let isOpen = false;
+
+  toggle.onclick = () => {
+    if (!isOpen) {
+      widget.classList.add("open");
+      widget.classList.remove("closing");
+      isOpen = true;
+    } else {
+      widget.classList.add("closing");
+
+      setTimeout(() => {
+        widget.classList.remove("open");
+        isOpen = false;
+      }, 200);
+    }
+  };
+}
 
 document.body.classList.toggle("chat-open");
 

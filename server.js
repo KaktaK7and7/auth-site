@@ -156,6 +156,21 @@ app.get("/api/assistant/messages", requireAuthApi, async (req, res) => {
 });
 
 
+app.get("/api/assistant/messages", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/messages/${req.session.user.id}`
+    );
+
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/messages error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+
 app.get("/api/assistant/me", requireAuthApi, async (req, res) => {
   try {
     res.json({

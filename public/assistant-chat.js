@@ -170,7 +170,37 @@ if (toggle && widget) {
   };
 }
 
+async function loadMessages() {
+  const r = await fetch("/api/assistant/messages");
+  const data = await r.json();
 
+  if (!r.ok) {
+    console.error("messages load error:", data);
+    return;
+  }
+
+  messages.innerHTML = "";
+
+  session_id = data.session_id || 0;
+  sessionEl.textContent = String(session_id);
+
+  for (const m of data.messages || []) {
+    add(m.role, m.content);
+  }
+
+  messages.scrollTop = messages.scrollHeight;
+}
+
+const newChatBtn = document.getElementById("new-chat-btn");
+
+if (newChatBtn) {
+  newChatBtn.onclick = () => {
+    session_id = 0;
+    sessionEl.textContent = "0";
+    messages.innerHTML = "";
+    add("assistant", "Начнём новый разговор ✨");
+  };
+}
 
 // отправка сообщения
 async function send(msg) {
@@ -244,6 +274,12 @@ document.querySelectorAll(".presets button").forEach(btn => {
 });
 
 // старт
-loadPersona();
-loadMemory();
-loadMessages();
+(async function init() {
+  try {
+    await loadPersona();
+    await loadMemory();
+    await loadMessages();
+  } catch (e) {
+    console.error("init error:", e);
+  }
+})();

@@ -75,7 +75,7 @@ async function loadPersona() {
 
   nameEl.textContent = d.name || "Мелисса";
   roleEl.textContent = d.identity || "";
-  setActivePreset(data.preset_name);
+  setActivePreset(d.preset_name);
 }
 
 // загрузка памяти
@@ -129,21 +129,7 @@ async function loadMemory() {
   `;
 }
 
-async function loadMessages() {
-  const r = await fetch("/api/assistant/messages");
-  const data = await r.json();
 
-  if (!r.ok) return;
-
-  messages.innerHTML = "";
-
-  data.messages.forEach(m => {
-    add(m.role, m.content);
-  });
-
-  session_id = data.session_id || 0;
-  sessionEl.textContent = session_id;
-}
 
 
 let isOpen = false;
@@ -211,6 +197,7 @@ async function send(msg) {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
+      user_id: 1, // временно
       message: msg,
       session_id
     })

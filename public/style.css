@@ -847,7 +847,29 @@ body {
 
 
 /* ===== CHAT PAGE UI ===== */
+.name-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
 
+.name-box input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: #0f1530;
+  color: white;
+}
+
+.name-box button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: #7c5cff;
+  color: white;
+  cursor: pointer;
+}
 
 .chat-bottom-row {
   display: flex;

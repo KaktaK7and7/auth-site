@@ -11,6 +11,9 @@ const memoryEl = document.getElementById("memory");
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
 
+const nameInput = document.getElementById("assistant-name-input");
+const saveNameBtn = document.getElementById("save-name-btn");
+
 // вывод сообщения
 function add(role, text) {
   const el = document.createElement("div");
@@ -89,6 +92,11 @@ async function loadPersona() {
 
   nameEl.textContent = d.name || "Мелисса";
   roleEl.textContent = d.identity || "";
+
+  if (nameInput) {
+    nameInput.value = d.name || "Мелисса";
+  }
+
   setActivePreset(d.preset_name);
 }
 
@@ -193,6 +201,7 @@ async function loadMessages() {
 
 const newChatBtn = document.getElementById("new-chat-btn");
 
+
 if (newChatBtn) {
   newChatBtn.onclick = () => {
     session_id = 0;
@@ -261,6 +270,32 @@ document.querySelectorAll(".presets button").forEach(btn => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ preset_name: preset })
     });
+
+
+    if (saveNameBtn) {
+      saveNameBtn.onclick = async () => {
+        const newName = nameInput.value.trim();
+        if (!newName) return;
+
+        const r = await fetch("/api/assistant/name", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ name: newName })
+        });
+
+        if (!r.ok) {
+          add("assistant", "Не получилось сменить имя 😔");
+          return;
+        }
+
+        nameEl.textContent = newName;
+
+        add("assistant", `Теперь меня зовут ${newName} 😉`);
+      };
+    }
+
 
     if (!res.ok) {
       add("assistant", "Не получилось сменить характер 😔");

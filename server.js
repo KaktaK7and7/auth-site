@@ -187,6 +187,27 @@ app.get("/api/assistant/me", requireAuthApi, async (req, res) => {
   }
 });
 
+
+app.post("/api/assistant/name", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/persona/${req.session.user.id}/name`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: req.body.name })
+      }
+    );
+
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (err) {
+    console.error("name update error:", err);
+    res.status(500).json({ error: "Assistant service error" });
+  }
+});
+
+
 app.post("/api/assistant/chat", requireAuthApi, async (req, res) => {
   try {
     const { message, session_id = 0 } = req.body;

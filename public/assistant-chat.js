@@ -1,5 +1,6 @@
 let session_id = 0;
 let typingEl = null;
+let user_id = null;
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
@@ -65,6 +66,19 @@ function setActivePreset(presetName) {
       btn.classList.add("active-preset");
     }
   });
+}
+
+
+async function loadUser() {
+  const r = await fetch("/api/me");
+  const d = await r.json();
+
+  if (!d.loggedIn) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  user_id = d.user.id;
 }
 
 
@@ -190,6 +204,13 @@ if (newChatBtn) {
 
 // отправка сообщения
 async function send(msg) {
+
+  // 🔥 ВОТ СЮДА
+  if (!user_id) {
+    add("assistant", "Ошибка: пользователь не найден");
+    return;
+  }
+
   add("user", msg);
   showTyping();
 
@@ -197,7 +218,7 @@ async function send(msg) {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
-      user_id: 1, // временно
+      user_id,
       message: msg,
       session_id
     })
@@ -263,6 +284,7 @@ document.querySelectorAll(".presets button").forEach(btn => {
 // старт
 (async function init() {
   try {
+    await loadUser();      // ← ДОБАВИЛИ
     await loadPersona();
     await loadMemory();
     await loadMessages();

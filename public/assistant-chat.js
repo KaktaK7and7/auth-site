@@ -37,10 +37,14 @@ function add(role, text) {
   messages.scrollTop = messages.scrollHeight;
 }
 
+function getAssistantTypingName() {
+  return nameEl?.textContent?.trim() || "Ассистент";
+}
+
 function showTyping() {
   typingEl = document.createElement("div");
   typingEl.className = "msg assistant";
-  typingEl.textContent = "Мелисса печатает...";
+  typingEl.textContent = `${getAssistantTypingName()} печатает...`;
   messages.appendChild(typingEl);
   messages.scrollTop = messages.scrollHeight;
 }

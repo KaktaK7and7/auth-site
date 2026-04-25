@@ -68,17 +68,32 @@
     </div>
 
     <h3>Память</h3>
-    <form class="memory-form" id="memory-form">
-      <textarea id="memory-input" rows="2" placeholder="Новый факт для памяти"></textarea>
-      <button type="submit">Добавить</button>
-    </form>
-    <div class="memory-items" id="memory-items"></div>
+    <button class="memory-toggle" id="memory-toggle" type="button">Управлять памятью</button>
     <div id="memory"></div>
 
   </div>
 
 </div>
 
+</div>
+
+<div class="memory-modal" id="memory-modal" hidden>
+  <div class="memory-modal__backdrop" data-memory-close></div>
+  <div class="memory-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="memory-modal-title">
+    <div class="memory-modal__header">
+      <h2 id="memory-modal-title">Управление памятью</h2>
+      <button class="memory-modal__close" type="button" id="memory-modal-close" aria-label="Закрыть">×</button>
+    </div>
+
+    <form class="memory-form" id="memory-form">
+      <textarea id="memory-input" rows="3" placeholder="Новый факт для памяти"></textarea>
+      <button type="submit">Добавить</button>
+    </form>
+
+    <div class="memory-items" id="memory-items"></div>
+
+    <button class="memory-clear" id="memory-clear-btn" type="button">Очистить всю память</button>
+  </div>
 </div>
 
 <script src="/assistant-chat.js"></script>

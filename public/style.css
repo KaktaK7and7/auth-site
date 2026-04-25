@@ -1096,8 +1096,65 @@ body {
   background: #26325b;
 }
 
-.memory-manager[hidden] {
+.memory-modal[hidden] {
   display: none;
+}
+
+.memory-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.memory-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.64);
+  backdrop-filter: blur(8px);
+}
+
+.memory-modal__dialog {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #121933 0%, #0f1731 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 22px 70px rgba(0,0,0,0.48);
+}
+
+.memory-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.memory-modal__header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.memory-modal__close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #1c2440;
+  color: white;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.memory-modal__close:hover {
+  background: #26325b;
 }
 
 .memory-form {
@@ -1205,6 +1262,27 @@ body {
 .memory-actions button:hover,
 .memory-form button:hover {
   background: #26325b;
+}
+
+.memory-clear {
+  width: 100%;
+  margin-top: 4px;
+  border: 1px solid rgba(255, 122, 122, 0.28);
+  background: rgba(255, 122, 122, 0.10);
+  color: #ffd5d5;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.memory-clear:hover {
+  background: rgba(255, 122, 122, 0.16);
+}
+
+.memory-clear:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .memory-group {

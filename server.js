@@ -294,6 +294,20 @@ app.get("/api/assistant/memory", requireAuthApi, async (req, res) => {
   }
 });
 
+app.post("/api/assistant/memory/clear", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/memory/${req.session.user.id}/clear`,
+      { method: "POST" }
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/memory clear error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
 app.get("/api/assistant/memory-items", requireAuthApi, async (req, res) => {
   try {
     const response = await fetch(

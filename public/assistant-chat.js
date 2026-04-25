@@ -1,7 +1,6 @@
 let session_id = 0;
 let typingEl = null;
 let user_id = null;
-const ASSISTANT_NAME_STORAGE_KEY = "ziren.assistant.name";
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
@@ -11,8 +10,10 @@ const memoryEl = document.getElementById("memory");
 const memoryItemsEl = document.getElementById("memory-items");
 const memoryForm = document.getElementById("memory-form");
 const memoryInput = document.getElementById("memory-input");
-let memoryManager = null;
-let memoryToggle = null;
+const memoryToggle = document.getElementById("memory-toggle");
+const memoryModal = document.getElementById("memory-modal");
+const memoryModalClose = document.getElementById("memory-modal-close");
+const memoryClearBtn = document.getElementById("memory-clear-btn");
 
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
@@ -194,16 +195,18 @@ async function saveAssistantName() {
       },
       body: JSON.stringify({ name: newName })
     });
+    const data = await r.json().catch(() => ({}));
 
     if (!r.ok) {
       add("assistant", "Не получилось сменить имя");
       return;
     }
 
-    nameEl.textContent = newName;
-    nameInput.value = newName;
+    const savedName = String(data.name || newName).trim();
+    nameEl.textContent = savedName;
+    nameInput.value = savedName;
     await loadPersona();
-    add("assistant", `Теперь меня зовут ${escapeHtml(newName)}`);
+    add("assistant", `Теперь меня зовут ${escapeHtml(savedName)}`);
   } finally {
     saveNameBtn.disabled = false;
   }
@@ -233,15 +236,7 @@ async function loadPersona() {
     d = await r.json();
   } catch (error) {
     console.error("persona load error:", error);
-    const fallbackName = localStorage.getItem(ASSISTANT_NAME_STORAGE_KEY);
-    const assistantName = fallbackName || "Мелисса";
-
-    nameEl.textContent = assistantName;
     roleEl.textContent = "";
-
-    if (nameInput) {
-      nameInput.value = assistantName;
-    }
 
     return;
   }
@@ -276,16 +271,16 @@ async function loadMemory() {
   memoryEl.innerHTML = `
     <div class="memory-group">
       <div class="memory-title">Профиль</div>
-      <div class="memory-item"><strong>Имя:</strong> ${profile.name || "—"}</div>
-      <div class="memory-item"><strong>Город:</strong> ${profile.city || "—"}</div>
-      <div class="memory-item"><strong>Язык:</strong> ${profile.language || "—"}</div>
+      <div class="memory-item"><strong>Имя:</strong> ${escapeHtml(profile.name || "—")}</div>
+      <div class="memory-item"><strong>Город:</strong> ${escapeHtml(profile.city || "—")}</div>
+      <div class="memory-item"><strong>Язык:</strong> ${escapeHtml(profile.language || "—")}</div>
     </div>
 
     <div class="memory-group">
       <div class="memory-title">Интересы</div>
       ${
         interests.length
-          ? interests.map(x => `<div class="memory-tag">${x}</div>`).join("")
+          ? interests.map(x => `<div class="memory-tag">${escapeHtml(x)}</div>`).join("")
           : `<div class="memory-item">Пока пусто</div>`
       }
     </div>
@@ -294,7 +289,7 @@ async function loadMemory() {
       <div class="memory-title">Проекты</div>
       ${
         projects.length
-          ? projects.map(x => `<div class="memory-tag">${x}</div>`).join("")
+          ? projects.map(x => `<div class="memory-tag">${escapeHtml(x)}</div>`).join("")
           : `<div class="memory-item">Пока пусто</div>`
       }
     </div>
@@ -304,11 +299,11 @@ async function loadMemory() {
       <div class="memory-title">Питомцы</div>
       ${renderEntityList(entities.pets, ["type", "name", "color"])}
       <div class="memory-title">Люди</div>
-      ${renderEntityList(entities.people, ["name"])}
+      ${renderEntityList(entities.people, ["name", "content"])}
       <div class="memory-title">Транспорт</div>
-      ${renderEntityList(entities.vehicles, ["name"])}
+      ${renderEntityList(entities.vehicles, ["name", "content"])}
       <div class="memory-title">Прочее</div>
-      ${renderEntityList(entities.other, ["text", "content", "value", "name"])}
+      ${renderEntityList(entities.other, ["text", "content", "name"])}
     </div>
   `;
 }
@@ -427,28 +422,63 @@ if (saveNameBtn) {
   saveNameBtn.onclick = saveAssistantName;
 }
 
-if (memoryForm && memoryItemsEl) {
-  memoryToggle = document.createElement("button");
-  memoryToggle.className = "memory-toggle";
-  memoryToggle.id = "memory-toggle";
-  memoryToggle.type = "button";
+function openMemoryModal() {
+  if (!memoryModal) return;
+  memoryModal.hidden = false;
+  memoryToggle?.setAttribute("aria-expanded", "true");
+  memoryInput?.focus();
+}
+
+function closeMemoryModal() {
+  if (!memoryModal) return;
+  memoryModal.hidden = true;
+  memoryToggle?.setAttribute("aria-expanded", "false");
+}
+
+if (memoryToggle) {
   memoryToggle.setAttribute("aria-expanded", "false");
-  memoryToggle.textContent = "Управлять памятью";
+  memoryToggle.onclick = openMemoryModal;
+}
 
-  memoryManager = document.createElement("div");
-  memoryManager.className = "memory-manager";
-  memoryManager.id = "memory-manager";
-  memoryManager.hidden = true;
+if (memoryModalClose) {
+  memoryModalClose.onclick = closeMemoryModal;
+}
 
-  memoryForm.parentNode.insertBefore(memoryToggle, memoryForm);
-  memoryForm.parentNode.insertBefore(memoryManager, memoryForm);
-  memoryManager.appendChild(memoryForm);
-  memoryManager.appendChild(memoryItemsEl);
+if (memoryModal) {
+  memoryModal.addEventListener("click", (e) => {
+    if (e.target.closest("[data-memory-close]")) {
+      closeMemoryModal();
+    }
+  });
+}
 
-  memoryToggle.onclick = () => {
-    const shouldOpen = memoryManager.hidden;
-    memoryManager.hidden = !shouldOpen;
-    memoryToggle.setAttribute("aria-expanded", String(shouldOpen));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && memoryModal && !memoryModal.hidden) {
+    closeMemoryModal();
+  }
+});
+
+if (memoryClearBtn) {
+  memoryClearBtn.onclick = async () => {
+    const confirmed = confirm("Вы уверены? Это удалит всю память ассистента о вас.");
+    if (!confirmed) return;
+
+    memoryClearBtn.disabled = true;
+    try {
+      const r = await fetch("/api/assistant/memory/clear", {
+        method: "POST"
+      });
+
+      if (!r.ok) {
+        add("assistant", "Не получилось очистить память");
+        return;
+      }
+
+      await loadMemoryItems();
+      await loadMemory();
+    } finally {
+      memoryClearBtn.disabled = false;
+    }
   };
 }
 

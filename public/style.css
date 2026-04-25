@@ -1080,6 +1080,113 @@ body {
   width: 100%;
 }
 
+.memory-form {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.memory-form textarea,
+.memory-row-edit textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 54px;
+  max-height: 120px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: #0f1530;
+  color: white;
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.memory-form textarea:focus,
+.memory-row-edit textarea:focus {
+  border-color: rgba(124, 92, 255, 0.75);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.12);
+}
+
+.memory-form button,
+.memory-actions button {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #1c2440;
+  color: white;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.memory-form button {
+  width: 100%;
+  background: #7c5cff;
+}
+
+.memory-form button:disabled,
+.memory-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.memory-items {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.memory-empty,
+.memory-row {
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.memory-empty {
+  padding: 10px;
+  color: #98a4c3;
+  font-size: 13px;
+}
+
+.memory-row {
+  padding: 10px;
+}
+
+.memory-row-text {
+  color: #dfe6ff;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.memory-row-edit {
+  display: none;
+}
+
+.memory-row.editing .memory-row-text,
+.memory-row.editing > .memory-actions {
+  display: none;
+}
+
+.memory-row.editing .memory-row-edit {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.memory-actions button:hover,
+.memory-form button:hover {
+  background: #26325b;
+}
+
 .memory-group {
   width: 100%;
   box-sizing: border-box;

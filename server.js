@@ -23,6 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use((req, res, next) => {
+  if (req.hostname.includes("railway.app")) {
+    res.set("X-Robots-Tag", "noindex");
+  }
+  next();
+});
+
 app.use(
   session({
     name: "ziren.sid",
@@ -115,6 +122,20 @@ function requireAuthApi(req, res, next) {
   next();
 }
 
+async function readAssistantResponse(response) {
+  const text = await response.text();
+
+  if (!text) {
+    return { ok: response.ok };
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return { ok: response.ok, raw: text };
+  }
+}
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -142,18 +163,6 @@ app.get("/api/me", (req, res) => {
   });
 });
 
-app.get("/api/assistant/messages", requireAuthApi, async (req, res) => {
-  try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/messages/${req.session.user.id}`
-    );
-
-    const data = await response.json();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: "failed" });
-  }
-});
 
 
 app.get("/api/assistant/messages", requireAuthApi, async (req, res) => {
@@ -281,6 +290,69 @@ app.get("/api/assistant/memory", requireAuthApi, async (req, res) => {
     return res.status(response.status).json(data);
   } catch (error) {
     console.error("assistant/memory error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.get("/api/assistant/memory-items", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}`
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/memory-items error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.post("/api/assistant/memory-items", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body || {})
+      }
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/memory-items create error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.patch("/api/assistant/memory-items/:id", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}/${encodeURIComponent(req.params.id)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body || {})
+      }
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/memory-items update error:", error);
+    res.status(500).json({ error: "Assistant service unavailable" });
+  }
+});
+
+app.delete("/api/assistant/memory-items/:id", requireAuthApi, async (req, res) => {
+  try {
+    const response = await fetch(
+      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}/${encodeURIComponent(req.params.id)}`,
+      { method: "DELETE" }
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("assistant/memory-items delete error:", error);
     res.status(500).json({ error: "Assistant service unavailable" });
   }
 });
@@ -598,10 +670,4 @@ initDb()
     process.exit(1);
   });
 
-app.use((req, res, next) => {
-  if (req.hostname.includes("railway.app")) {
-    res.set("X-Robots-Tag", "noindex");
-  }
-  next();
-});
 

@@ -1,12 +1,16 @@
 let session_id = 0;
 let typingEl = null;
 let user_id = null;
+const ASSISTANT_NAME_STORAGE_KEY = "ziren.assistant.name";
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const sessionEl = document.getElementById("session");
 const memoryEl = document.getElementById("memory");
+const memoryItemsEl = document.getElementById("memory-items");
+const memoryForm = document.getElementById("memory-form");
+const memoryInput = document.getElementById("memory-input");
 
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
@@ -71,6 +75,110 @@ function setActivePreset(presetName) {
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getMemoryItems(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.memory_items)) return data.memory_items;
+  if (Array.isArray(data.memoryItems)) return data.memoryItems;
+  return [];
+}
+
+function getMemoryItemText(item) {
+  return item.content || item.text || item.value || item.fact || "";
+}
+
+function getMemoryItemId(item) {
+  return item.id || item.memory_id || item.memoryItemId || item._id;
+}
+
+function renderMemoryItems(items) {
+  if (!memoryItemsEl) return;
+
+  if (!items.length) {
+    memoryItemsEl.innerHTML = `<div class="memory-empty">Память пока пустая</div>`;
+    return;
+  }
+
+  memoryItemsEl.innerHTML = items.map((item) => {
+    const id = getMemoryItemId(item);
+    const text = getMemoryItemText(item);
+    const safeId = escapeHtml(id);
+    const safeText = escapeHtml(text);
+
+    return `
+      <div class="memory-row" data-memory-id="${safeId}">
+        <div class="memory-row-text">${safeText || "Без текста"}</div>
+        <div class="memory-row-edit">
+          <textarea rows="2">${safeText}</textarea>
+          <div class="memory-actions">
+            <button type="button" data-memory-action="save">Сохранить</button>
+            <button type="button" data-memory-action="cancel">Отмена</button>
+          </div>
+        </div>
+        <div class="memory-actions">
+          <button type="button" data-memory-action="edit">Изм.</button>
+          <button type="button" data-memory-action="delete">Удалить</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadMemoryItems() {
+  if (!memoryItemsEl) return;
+
+  memoryItemsEl.innerHTML = `<div class="memory-empty">Загрузка...</div>`;
+
+  const r = await fetch("/api/assistant/memory-items");
+  const d = await r.json();
+
+  if (!r.ok) {
+    memoryItemsEl.innerHTML = `<div class="memory-empty">Ошибка загрузки памяти</div>`;
+    return;
+  }
+
+  renderMemoryItems(getMemoryItems(d));
+}
+
+async function saveAssistantName() {
+  const newName = nameInput.value.trim();
+  if (!newName) return;
+
+  saveNameBtn.disabled = true;
+
+  try {
+    const r = await fetch("/api/assistant/name", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name: newName })
+    });
+
+    if (!r.ok) {
+      add("assistant", "Не получилось сменить имя");
+      return;
+    }
+
+    nameEl.textContent = newName;
+    nameInput.value = newName;
+    localStorage.setItem(ASSISTANT_NAME_STORAGE_KEY, newName);
+    await loadPersona();
+    add("assistant", `Теперь меня зовут ${escapeHtml(newName)}`);
+  } finally {
+    saveNameBtn.disabled = false;
+  }
+}
+
 
 async function loadUser() {
   const r = await fetch("/api/me");
@@ -89,12 +197,14 @@ async function loadUser() {
 async function loadPersona() {
   const r = await fetch("/api/assistant/persona");
   const d = await r.json();
+  const savedName = localStorage.getItem(ASSISTANT_NAME_STORAGE_KEY);
+  const assistantName = savedName || d.name || "Мелисса";
 
-  nameEl.textContent = d.name || "Мелисса";
+  nameEl.textContent = assistantName;
   roleEl.textContent = d.identity || "";
 
   if (nameInput) {
-    nameInput.value = d.name || "Мелисса";
+    nameInput.value = assistantName;
   }
 
   setActivePreset(d.preset_name);
@@ -247,6 +357,7 @@ async function send(msg) {
   hideTyping();
 
   loadMemory();
+  loadMemoryItems();
 }
 
 // форма
@@ -260,6 +371,110 @@ form.onsubmit = async (e) => {
   send(msg);
 };
 
+if (saveNameBtn) {
+  saveNameBtn.onclick = saveAssistantName;
+}
+
+if (memoryForm) {
+  memoryForm.onsubmit = async (e) => {
+    e.preventDefault();
+
+    const text = memoryInput.value.trim();
+    if (!text) return;
+
+    const button = memoryForm.querySelector("button");
+    button.disabled = true;
+
+    try {
+      const r = await fetch("/api/assistant/memory-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, text })
+      });
+
+      if (!r.ok) {
+        add("assistant", "Не получилось добавить память");
+        return;
+      }
+
+      memoryInput.value = "";
+      await loadMemoryItems();
+      await loadMemory();
+    } finally {
+      button.disabled = false;
+    }
+  };
+}
+
+if (memoryItemsEl) {
+  memoryItemsEl.onclick = async (e) => {
+    const button = e.target.closest("button[data-memory-action]");
+    if (!button) return;
+
+    const row = button.closest(".memory-row");
+    if (!row) return;
+
+    const id = row.getAttribute("data-memory-id");
+    const action = button.getAttribute("data-memory-action");
+    const textarea = row.querySelector("textarea");
+
+    if (action === "edit") {
+      row.classList.add("editing");
+      textarea.focus();
+      return;
+    }
+
+    if (action === "cancel") {
+      row.classList.remove("editing");
+      return;
+    }
+
+    if (action === "save") {
+      const text = textarea.value.trim();
+      if (!text) return;
+
+      button.disabled = true;
+      try {
+        const r = await fetch(`/api/assistant/memory-items/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: text, text })
+        });
+
+        if (!r.ok) {
+          add("assistant", "Не получилось обновить память");
+          return;
+        }
+
+        await loadMemoryItems();
+        await loadMemory();
+      } finally {
+        button.disabled = false;
+      }
+      return;
+    }
+
+    if (action === "delete") {
+      button.disabled = true;
+      try {
+        const r = await fetch(`/api/assistant/memory-items/${encodeURIComponent(id)}`, {
+          method: "DELETE"
+        });
+
+        if (!r.ok) {
+          add("assistant", "Не получилось удалить память");
+          return;
+        }
+
+        await loadMemoryItems();
+        await loadMemory();
+      } finally {
+        button.disabled = false;
+      }
+    }
+  };
+}
+
 // пресеты
 document.querySelectorAll(".presets button").forEach(btn => {
   btn.onclick = async () => {
@@ -270,32 +485,6 @@ document.querySelectorAll(".presets button").forEach(btn => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ preset_name: preset })
     });
-
-
-    if (saveNameBtn) {
-      saveNameBtn.onclick = async () => {
-        const newName = nameInput.value.trim();
-        if (!newName) return;
-
-        const r = await fetch("/api/assistant/name", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ name: newName })
-        });
-
-        if (!r.ok) {
-          add("assistant", "Не получилось сменить имя 😔");
-          return;
-        }
-
-        nameEl.textContent = newName;
-
-        add("assistant", `Теперь меня зовут ${newName} 😉`);
-      };
-    }
-
 
     if (!res.ok) {
       add("assistant", "Не получилось сменить характер 😔");
@@ -322,6 +511,7 @@ document.querySelectorAll(".presets button").forEach(btn => {
     await loadUser();      // ← ДОБАВИЛИ
     await loadPersona();
     await loadMemory();
+    await loadMemoryItems();
     await loadMessages();
   } catch (e) {
     console.error("init error:", e);

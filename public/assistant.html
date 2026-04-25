@@ -41,7 +41,7 @@
         </p>
 
         <div class="hero-buttons">
-          <a class="btn btn-primary" href="/assistant/chat">Открыть Мелиссу</a>
+          <a class="btn btn-primary" id="assistant-open-btn" href="/assistant/chat">Открыть Мелиссу</a>
           <a class="btn btn-ghost" href="#pricing">Тарифы</a>
           <a class="btn btn-secondary" href="#download">Скачать</a>
         </div>
@@ -158,6 +158,25 @@
     </div>
   </footer>
 
+  <script>
+    (async function loadAssistantOpenButton() {
+      const button = document.getElementById("assistant-open-btn");
+      if (!button) return;
+
+      try {
+        const response = await fetch("/api/assistant/persona");
+        if (!response.ok) return;
+
+        const persona = await response.json();
+        const name = String(persona.name || "").trim();
+        if (name) {
+          button.textContent = `Открыть ${name}`;
+        }
+      } catch (error) {
+        console.error("assistant persona load error:", error);
+      }
+    })();
+  </script>
   <script src="script.js"></script>
 </body>
 </html>

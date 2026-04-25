@@ -11,6 +11,8 @@ const memoryEl = document.getElementById("memory");
 const memoryItemsEl = document.getElementById("memory-items");
 const memoryForm = document.getElementById("memory-form");
 const memoryInput = document.getElementById("memory-input");
+let memoryManager = null;
+let memoryToggle = null;
 
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
@@ -100,6 +102,35 @@ function getMemoryItemId(item) {
   return item.id || item.memory_id || item.memoryItemId || item._id;
 }
 
+function getEntityText(entity, fields) {
+  if (entity == null) return "";
+  if (typeof entity === "string") return entity;
+
+  return fields
+    .map((field) => entity[field])
+    .filter((value) => value != null && String(value).trim())
+    .map((value) => String(value).trim())
+    .join(" / ");
+}
+
+function renderEntityList(items, fields) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="memory-item">Пока пусто</div>`;
+  }
+
+  const renderedItems = items
+    .map((item) => escapeHtml(getEntityText(item, fields)))
+    .filter(Boolean);
+
+  if (!renderedItems.length) {
+    return `<div class="memory-item">Пока пусто</div>`;
+  }
+
+  return renderedItems
+    .map((text) => `<div class="memory-item">${text}</div>`)
+    .join("");
+}
+
 function renderMemoryItems(items) {
   if (!memoryItemsEl) return;
 
@@ -171,7 +202,6 @@ async function saveAssistantName() {
 
     nameEl.textContent = newName;
     nameInput.value = newName;
-    localStorage.setItem(ASSISTANT_NAME_STORAGE_KEY, newName);
     await loadPersona();
     add("assistant", `Теперь меня зовут ${escapeHtml(newName)}`);
   } finally {
@@ -195,10 +225,28 @@ async function loadUser() {
 
 // загрузка персонажа
 async function loadPersona() {
-  const r = await fetch("/api/assistant/persona");
-  const d = await r.json();
-  const savedName = localStorage.getItem(ASSISTANT_NAME_STORAGE_KEY);
-  const assistantName = savedName || d.name || "Мелисса";
+  let d = {};
+
+  try {
+    const r = await fetch("/api/assistant/persona");
+    if (!r.ok) throw new Error("Persona request failed");
+    d = await r.json();
+  } catch (error) {
+    console.error("persona load error:", error);
+    const fallbackName = localStorage.getItem(ASSISTANT_NAME_STORAGE_KEY);
+    const assistantName = fallbackName || "Мелисса";
+
+    nameEl.textContent = assistantName;
+    roleEl.textContent = "";
+
+    if (nameInput) {
+      nameInput.value = assistantName;
+    }
+
+    return;
+  }
+
+  const assistantName = d.name || "Мелисса";
 
   nameEl.textContent = assistantName;
   roleEl.textContent = d.identity || "";
@@ -253,10 +301,14 @@ async function loadMemory() {
 
     <div class="memory-group">
       <div class="memory-title">Сущности</div>
-      <div class="memory-item"><strong>Питомцы:</strong> ${(entities.pets || []).length}</div>
-      <div class="memory-item"><strong>Люди:</strong> ${(entities.people || []).length}</div>
-      <div class="memory-item"><strong>Транспорт:</strong> ${(entities.vehicles || []).length}</div>
-      <div class="memory-item"><strong>Прочее:</strong> ${(entities.other || []).length}</div>
+      <div class="memory-title">Питомцы</div>
+      ${renderEntityList(entities.pets, ["type", "name", "color"])}
+      <div class="memory-title">Люди</div>
+      ${renderEntityList(entities.people, ["name"])}
+      <div class="memory-title">Транспорт</div>
+      ${renderEntityList(entities.vehicles, ["name"])}
+      <div class="memory-title">Прочее</div>
+      ${renderEntityList(entities.other, ["text", "content", "value", "name"])}
     </div>
   `;
 }
@@ -373,6 +425,31 @@ form.onsubmit = async (e) => {
 
 if (saveNameBtn) {
   saveNameBtn.onclick = saveAssistantName;
+}
+
+if (memoryForm && memoryItemsEl) {
+  memoryToggle = document.createElement("button");
+  memoryToggle.className = "memory-toggle";
+  memoryToggle.id = "memory-toggle";
+  memoryToggle.type = "button";
+  memoryToggle.setAttribute("aria-expanded", "false");
+  memoryToggle.textContent = "Управлять памятью";
+
+  memoryManager = document.createElement("div");
+  memoryManager.className = "memory-manager";
+  memoryManager.id = "memory-manager";
+  memoryManager.hidden = true;
+
+  memoryForm.parentNode.insertBefore(memoryToggle, memoryForm);
+  memoryForm.parentNode.insertBefore(memoryManager, memoryForm);
+  memoryManager.appendChild(memoryForm);
+  memoryManager.appendChild(memoryItemsEl);
+
+  memoryToggle.onclick = () => {
+    const shouldOpen = memoryManager.hidden;
+    memoryManager.hidden = !shouldOpen;
+    memoryToggle.setAttribute("aria-expanded", String(shouldOpen));
+  };
 }
 
 if (memoryForm) {

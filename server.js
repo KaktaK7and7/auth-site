@@ -3,6 +3,7 @@ const path = require("path");
 const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const { Pool } = require("pg");
 require("dotenv").config();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
@@ -98,6 +99,16 @@ async function initDb() {
     ON user_sessions (expire);
   `);
 
+    await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_desktop_sessions_user_id
+    ON desktop_sessions(user_id);
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_desktop_sessions_expires_at
+    ON desktop_sessions(expires_at);
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_commands (
       id SERIAL PRIMARY KEY,
@@ -135,6 +146,16 @@ async function readAssistantResponse(response) {
     return { ok: response.ok, raw: text };
   }
 }
+
+
+function createDesktopToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function hashDesktopToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -431,6 +452,142 @@ app.post("/register", async (req, res) => {
     res.status(500).send("Ошибка сервера при регистрации");
   }
 });
+
+
+
+app.post("/api/desktop/login", async (req, res) => {
+  try {
+    const { email, password, remember } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        ok: false,
+        error: "Введите email и пароль",
+      });
+    }
+
+    const result = await pool.query(
+      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        ok: false,
+        error: "Неверный email или пароль",
+      });
+    }
+
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        ok: false,
+        error: "Неверный email или пароль",
+      });
+    }
+
+    await pool.query(
+      "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1",
+      [user.id]
+    );
+
+    const token = createDesktopToken();
+    const tokenHash = hashDesktopToken(token);
+
+    const expiresAt = remember
+      ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+      : new Date(Date.now() + 1000 * 60 * 60 * 12);
+
+    await pool.query(
+      `
+      INSERT INTO desktop_sessions (user_id, token_hash, expires_at)
+      VALUES ($1, $2, $3)
+      `,
+      [user.id, tokenHash, expiresAt]
+    );
+
+    return res.json({
+      ok: true,
+      token,
+      user: {
+        id: String(user.id),
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("desktop login error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "Ошибка сервера при входе",
+    });
+  }
+});
+
+
+
+
+app.get("/api/desktop/me", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length)
+      : "";
+
+    if (!token) {
+      return res.status(401).json({
+        ok: false,
+        error: "No token",
+      });
+    }
+
+    const tokenHash = hashDesktopToken(token);
+
+    const result = await pool.query(
+      `
+      SELECT users.id, users.username, users.email
+      FROM desktop_sessions
+      JOIN users ON users.id = desktop_sessions.user_id
+      WHERE desktop_sessions.token_hash = $1
+      AND desktop_sessions.expires_at > CURRENT_TIMESTAMP
+      LIMIT 1
+      `,
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid session",
+      });
+    }
+
+    const user = result.rows[0];
+
+    return res.json({
+      ok: true,
+      user: {
+        id: String(user.id),
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("desktop me error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "Ошибка сервера",
+    });
+  }
+});
+
+
+
+
 
 app.post("/login", async (req, res) => {
   try {

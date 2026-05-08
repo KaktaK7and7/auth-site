@@ -8,6 +8,17 @@ const { Pool } = require("pg");
 require("dotenv").config();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const app = express();
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 const PORT = process.env.PORT || 3000;
 
 app.set("trust proxy", 1);

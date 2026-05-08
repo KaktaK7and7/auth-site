@@ -99,7 +99,17 @@ async function initDb() {
     ON user_sessions (expire);
   `);
 
-    await pool.query(`
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS desktop_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash VARCHAR(255) NOT NULL UNIQUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      expires_at TIMESTAMP NOT NULL
+    );
+  `);
+
+  await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_desktop_sessions_user_id
     ON desktop_sessions(user_id);
   `);

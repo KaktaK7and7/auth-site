@@ -4,10 +4,68 @@ const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const multer = require("multer");
+const { v2: cloudinary } = require("cloudinary");
 const { Pool } = require("pg");
 require("dotenv").config();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const app = express();
+
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const uploadAvatar = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 1024 * 1024 * 5,
+  },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Можно загружать только изображения"));
+    }
+
+    cb(null, true);
+  },
+});
+
+function uploadBufferToCloudinary(fileBuffer, userId) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "ziren/avatars",
+        public_id: `user_${userId}_${Date.now()}`,
+        overwrite: true,
+        resource_type: "image",
+        transformation: [
+          {
+            width: 512,
+            height: 512,
+            crop: "fill",
+            gravity: "face",
+            quality: "auto",
+            fetch_format: "auto",
+          },
+        ],
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(result);
+      }
+    );
+
+    stream.end(fileBuffer);
+  });
+}
+
+
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -175,6 +233,35 @@ function createDesktopToken() {
 
 function hashDesktopToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+
+async function getDesktopUserByToken(req) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : "";
+
+  if (!token) {
+    return null;
+  }
+
+  const tokenHash = hashDesktopToken(token);
+
+  const result = await pool.query(
+    `
+    SELECT users.id, users.username, users.email, users.avatar_url,
+           users.created_at, users.last_login_at
+    FROM desktop_sessions
+    JOIN users ON users.id = desktop_sessions.user_id
+    WHERE desktop_sessions.token_hash = $1
+    AND desktop_sessions.expires_at > CURRENT_TIMESTAMP
+    LIMIT 1
+    `,
+    [tokenHash]
+  );
+
+  return result.rows[0] || null;
 }
 
 
@@ -614,7 +701,52 @@ app.get("/api/desktop/me", async (req, res) => {
 });
 
 
+app.post("/api/desktop/avatar", uploadAvatar.single("avatar"), async (req, res) => {
+  try {
+    const user = await getDesktopUserByToken(req);
 
+    if (!user) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid session",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        ok: false,
+        error: "Файл не загружен",
+      });
+    }
+
+    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, user.id);
+    const avatarUrl = uploadResult.secure_url;
+
+    await pool.query(
+      "UPDATE users SET avatar_url = $1 WHERE id = $2",
+      [avatarUrl, user.id]
+    );
+
+    return res.json({
+      ok: true,
+      user: {
+        id: String(user.id),
+        username: user.username,
+        email: user.email,
+        avatar_url: avatarUrl,
+        created_at: user.created_at,
+        last_login_at: user.last_login_at,
+      },
+    });
+  } catch (error) {
+    console.error("desktop avatar upload error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "Ошибка загрузки аватарки",
+    });
+  }
+});
 
 
 app.post("/login", async (req, res) => {
@@ -778,8 +910,8 @@ app.get("/profile", requireAuth, async (req, res) => {
               </div>
 
               <div class="profile-actions">
-                <form action="/upload-avatar" method="POST" class="avatar-form">
-                  <input type="text" name="avatar_url" placeholder="Ссылка на аватарку" required />
+                <form action="/upload-avatar" method="POST" enctype="multipart/form-data" class="avatar-form">
+                  <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp" required />
                   <button class="btn btn-primary" type="submit">Сменить аватар</button>
                 </form>
               </div>
@@ -820,24 +952,26 @@ app.get("/profile", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/upload-avatar", requireAuth, async (req, res) => {
+app.post("/upload-avatar", requireAuth, uploadAvatar.single("avatar"), async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const { avatar_url } = req.body;
 
-    if (!avatar_url) {
+    if (!req.file) {
       return res.redirect("/profile");
     }
 
+    const uploadResult = await uploadBufferToCloudinary(req.file.buffer, userId);
+    const avatarUrl = uploadResult.secure_url;
+
     await pool.query(
       "UPDATE users SET avatar_url = $1 WHERE id = $2",
-      [avatar_url, userId]
+      [avatarUrl, userId]
     );
 
     res.redirect("/profile");
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Ошибка");
+    console.error("avatar upload error:", error);
+    res.status(500).send("Ошибка загрузки аватарки");
   }
 });
 

@@ -488,7 +488,7 @@ app.post("/api/desktop/login", async (req, res) => {
     }
 
     const result = await pool.query(
-      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
+      "SELECT id, username, email, password_hash, avatar_url, created_at, last_login_at FROM users WHERE email = $1",
       [email]
     );
 
@@ -536,6 +536,9 @@ app.post("/api/desktop/login", async (req, res) => {
         id: String(user.id),
         username: user.username,
         email: user.email,
+        avatar_url: user.avatar_url || "/images/Ziren.png",
+        created_at: user.created_at,
+        last_login_at: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -569,7 +572,8 @@ app.get("/api/desktop/me", async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT users.id, users.username, users.email
+      SELECT users.id, users.username, users.email, users.avatar_url,
+             users.created_at, users.last_login_at
       FROM desktop_sessions
       JOIN users ON users.id = desktop_sessions.user_id
       WHERE desktop_sessions.token_hash = $1
@@ -594,6 +598,9 @@ app.get("/api/desktop/me", async (req, res) => {
         id: String(user.id),
         username: user.username,
         email: user.email,
+        avatar_url: user.avatar_url || "/images/Ziren.png",
+        created_at: user.created_at,
+        last_login_at: user.last_login_at,
       },
     });
   } catch (error) {

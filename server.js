@@ -7,8 +7,25 @@ const crypto = require("crypto");
 const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
 const { Pool } = require("pg");
+const {
+  extractBearerToken,
+  hashDesktopToken,
+  parseAllowedOrigins,
+} = require("./lib/security");
 require("dotenv").config();
 const app = express();
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const SESSION_SECRET = String(process.env.SESSION_SECRET || "").trim();
+const AI_SERVICE_URL = String(process.env.AI_SERVICE_URL || "").trim();
+const AI_INTERNAL_TOKEN = String(process.env.AI_INTERNAL_TOKEN || "").trim();
+const CORS_ALLOWED_ORIGINS = parseAllowedOrigins(
+  process.env.CORS_ALLOWED_ORIGINS,
+);
+
+if (IS_PRODUCTION && !SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is required in production");
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -75,11 +92,21 @@ function uploadBufferToCloudinary(fileBuffer, userId) {
 
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  const origin = String(req.headers.origin || "");
+
+  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") {
+    if (origin && !CORS_ALLOWED_ORIGINS.has(origin)) {
+      return res.status(403).json({ error: "Origin is not allowed" });
+    }
+
     return res.sendStatus(204);
   }
 
@@ -97,8 +124,8 @@ const pool = new Pool({
     : false
 });
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+app.use(express.json({ limit: "100kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
@@ -116,15 +143,15 @@ app.use(
       tableName: "user_sessions",
       createTableIfMissing: true
     }),
-    secret: process.env.SESSION_SECRET || "super-secret-key-change-me",
+    secret: SESSION_SECRET || "ziren-development-only-secret",
     resave: false,
     saveUninitialized: false,
     rolling: true,
     proxy: true,
     cookie: {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: IS_PRODUCTION,
+      sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 30,
       path: "/"
     }
@@ -213,13 +240,6 @@ function requireAuth(req, res, next) {
   next();
 }
 
-function requireAuthApi(req, res, next) {
-  if (!req.session.user) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-  next();
-}
-
 async function readAssistantResponse(response) {
   const text = await response.text();
 
@@ -239,16 +259,8 @@ function createDesktopToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
-function hashDesktopToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-
 async function getDesktopUserByToken(req) {
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : "";
+  const token = extractBearerToken(req.headers.authorization);
 
   if (!token) {
     return null;
@@ -270,6 +282,70 @@ async function getDesktopUserByToken(req) {
   );
 
   return result.rows[0] || null;
+}
+
+
+async function requireAssistantAuth(req, res, next) {
+  try {
+    if (req.session?.user) {
+      req.assistantUser = req.session.user;
+      return next();
+    }
+
+    const desktopUser = await getDesktopUserByToken(req);
+
+    if (!desktopUser) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    req.assistantUser = desktopUser;
+    return next();
+  } catch (error) {
+    console.error("assistant auth error:", error);
+    return res.status(500).json({ error: "Authentication service unavailable" });
+  }
+}
+
+
+async function assistantFetch(servicePath, options = {}) {
+  if (!AI_SERVICE_URL || !AI_INTERNAL_TOKEN) {
+    const error = new Error("AI service gateway is not configured");
+    error.code = "AI_SERVICE_MISCONFIGURED";
+    throw error;
+  }
+
+  const baseUrl = AI_SERVICE_URL.replace(/\/+$/, "");
+  const normalizedPath = String(servicePath).replace(/^\/+/, "");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+
+  try {
+    return await fetch(`${baseUrl}/${normalizedPath}`, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        "X-Ziren-Internal-Token": AI_INTERNAL_TOKEN,
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+
+function sendAssistantError(res, error, context) {
+  console.error(`${context}:`, error);
+
+  if (error.code === "AI_SERVICE_MISCONFIGURED") {
+    return res.status(503).json({ error: "Assistant service is not configured" });
+  }
+
+  if (error.name === "AbortError") {
+    return res.status(504).json({ error: "Assistant service timeout" });
+  }
+
+  return res.status(502).json({ error: "Assistant service unavailable" });
 }
 
 
@@ -302,209 +378,200 @@ app.get("/api/me", (req, res) => {
 
 
 
-app.get("/api/assistant/messages", requireAuthApi, async (req, res) => {
+app.get("/api/assistant/messages", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/messages/${req.session.user.id}`
-    );
-
-    const data = await response.json();
+    const response = await assistantFetch(`/messages/${req.assistantUser.id}`);
+    const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("assistant/messages error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
+    return sendAssistantError(res, error, "assistant/messages error");
   }
 });
 
 
-app.get("/api/assistant/me", requireAuthApi, async (req, res) => {
-  try {
-    res.json({
-      ok: true,
-      user: {
-        id: req.session.user.id,
-        username: req.session.user.username,
-        email: req.session.user.email,
-      },
-    });
-  } catch (error) {
-    console.error("assistant/me error:", error);
-    res.status(500).json({ error: "Server error" });
-  }
+app.get("/api/assistant/me", requireAssistantAuth, (req, res) => {
+  return res.json({
+    ok: true,
+    user: {
+      id: String(req.assistantUser.id),
+      username: req.assistantUser.username,
+      email: req.assistantUser.email,
+    },
+  });
 });
 
 
-app.post("/api/assistant/name", requireAuthApi, async (req, res) => {
+app.post("/api/assistant/name", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/persona/${req.session.user.id}/name`,
+    const response = await assistantFetch(
+      `/persona/${req.assistantUser.id}/name`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: req.body.name })
-      }
+        body: JSON.stringify({ name: req.body.name }),
+      },
     );
-
-    const data = await response.json();
+    const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
-  } catch (err) {
-    console.error("name update error:", err);
-    res.status(500).json({ error: "Assistant service error" });
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/name error");
   }
 });
 
 
-app.post("/api/assistant/chat", requireAuthApi, async (req, res) => {
+app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
   try {
-    const { message, session_id = 0 } = req.body;
+    const { message, session_id = null } = req.body;
 
     if (!message || !String(message).trim()) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    const response = await fetch(`${process.env.AI_SERVICE_URL}/chat`, {
+    const response = await assistantFetch("/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        user_id: req.session.user.id,
-        message,
+        user_id: req.assistantUser.id,
+        message: String(message).trim(),
         session_id,
       }),
     });
-
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    console.error("assistant/chat error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
-  }
-});
-
-app.get("/api/assistant/persona", requireAuthApi, async (req, res) => {
-  try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/persona/${req.session.user.id}`
-    );
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    console.error("assistant/persona error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
-  }
-});
-
-app.post("/api/assistant/preset", requireAuthApi, async (req, res) => {
-  try {
-    const { preset_name } = req.body;
-
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/persona/${req.session.user.id}/preset`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ preset_name }),
-      }
-    );
-
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    console.error("assistant/preset error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
-  }
-});
-
-app.get("/api/assistant/memory", requireAuthApi, async (req, res) => {
-  try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/memory/${req.session.user.id}`
-    );
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    console.error("assistant/memory error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
-  }
-});
-
-app.post("/api/assistant/memory/clear", requireAuthApi, async (req, res) => {
-  try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/memory/${req.session.user.id}/clear`,
-      { method: "POST" }
-    );
     const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("assistant/memory clear error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
+    return sendAssistantError(res, error, "assistant/chat error");
   }
 });
 
-app.get("/api/assistant/memory-items", requireAuthApi, async (req, res) => {
+
+app.get("/api/assistant/persona", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}`
-    );
+    const response = await assistantFetch(`/persona/${req.assistantUser.id}`);
     const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("assistant/memory-items error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
+    return sendAssistantError(res, error, "assistant/persona error");
   }
 });
 
-app.post("/api/assistant/memory-items", requireAuthApi, async (req, res) => {
+
+app.post("/api/assistant/preset", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}`,
+    const response = await assistantFetch(
+      `/persona/${req.assistantUser.id}/preset`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(req.body || {})
-      }
+        body: JSON.stringify({ preset_name: req.body.preset_name }),
+      },
     );
     const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("assistant/memory-items create error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
+    return sendAssistantError(res, error, "assistant/preset error");
   }
 });
 
-app.patch("/api/assistant/memory-items/:id", requireAuthApi, async (req, res) => {
+
+app.get("/api/assistant/memory", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}/${encodeURIComponent(req.params.id)}`,
+    const response = await assistantFetch(`/memory/${req.assistantUser.id}`);
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/memory error");
+  }
+});
+
+
+app.post("/api/assistant/memory/clear", requireAssistantAuth, async (req, res) => {
+  try {
+    const response = await assistantFetch(
+      `/memory/${req.assistantUser.id}/clear`,
+      { method: "POST" },
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/memory clear error");
+  }
+});
+
+
+app.get("/api/assistant/memory-items", requireAssistantAuth, async (req, res) => {
+  try {
+    const response = await assistantFetch(`/memory-items/${req.assistantUser.id}`);
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/memory-items error");
+  }
+});
+
+
+app.post("/api/assistant/memory-items", requireAssistantAuth, async (req, res) => {
+  try {
+    const response = await assistantFetch(
+      `/memory-items/${req.assistantUser.id}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body || {}),
+      },
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/memory-items create error");
+  }
+});
+
+
+app.patch("/api/assistant/memory-items/:id", requireAssistantAuth, async (req, res) => {
+  try {
+    const itemId = encodeURIComponent(req.params.id);
+    const response = await assistantFetch(
+      `/memory-items/${req.assistantUser.id}/${itemId}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(req.body || {})
-      }
+        body: JSON.stringify(req.body || {}),
+      },
     );
     const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("assistant/memory-items update error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
+    return sendAssistantError(res, error, "assistant/memory-items update error");
   }
 });
 
-app.delete("/api/assistant/memory-items/:id", requireAuthApi, async (req, res) => {
+
+app.delete("/api/assistant/memory-items/:id", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.AI_SERVICE_URL}/memory-items/${req.session.user.id}/${encodeURIComponent(req.params.id)}`,
-      { method: "DELETE" }
+    const itemId = encodeURIComponent(req.params.id);
+    const response = await assistantFetch(
+      `/memory-items/${req.assistantUser.id}/${itemId}`,
+      { method: "DELETE" },
     );
     const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("assistant/memory-items delete error:", error);
-    res.status(500).json({ error: "Assistant service unavailable" });
+    return sendAssistantError(res, error, "assistant/memory-items delete error");
+  }
+});
+
+
+app.post("/api/assistant/app-launcher/resolve", requireAssistantAuth, async (req, res) => {
+  try {
+    const response = await assistantFetch("/app-launcher/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body || {}),
+    });
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/app-launcher error");
   }
 });
 
@@ -609,6 +676,10 @@ app.post("/api/desktop/login", async (req, res) => {
       [user.id]
     );
 
+    await pool.query(
+      "DELETE FROM desktop_sessions WHERE expires_at <= CURRENT_TIMESTAMP"
+    );
+
     const token = createDesktopToken();
     const tokenHash = hashDesktopToken(token);
 
@@ -651,41 +722,14 @@ app.post("/api/desktop/login", async (req, res) => {
 
 app.get("/api/desktop/me", async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice("Bearer ".length)
-      : "";
+    const user = await getDesktopUserByToken(req);
 
-    if (!token) {
-      return res.status(401).json({
-        ok: false,
-        error: "No token",
-      });
-    }
-
-    const tokenHash = hashDesktopToken(token);
-
-    const result = await pool.query(
-      `
-      SELECT users.id, users.username, users.email, users.avatar_url,
-             users.created_at, users.last_login_at
-      FROM desktop_sessions
-      JOIN users ON users.id = desktop_sessions.user_id
-      WHERE desktop_sessions.token_hash = $1
-      AND desktop_sessions.expires_at > CURRENT_TIMESTAMP
-      LIMIT 1
-      `,
-      [tokenHash]
-    );
-
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(401).json({
         ok: false,
         error: "Invalid session",
       });
     }
-
-    const user = result.rows[0];
 
     return res.json({
       ok: true,
@@ -704,6 +748,33 @@ app.get("/api/desktop/me", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Ошибка сервера",
+    });
+  }
+});
+
+
+app.post("/api/desktop/logout", async (req, res) => {
+  try {
+    const token = extractBearerToken(req.headers.authorization);
+
+    if (!token) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid session",
+      });
+    }
+
+    await pool.query(
+      "DELETE FROM desktop_sessions WHERE token_hash = $1",
+      [hashDesktopToken(token)],
+    );
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("desktop logout error:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Ошибка сервера при выходе",
     });
   }
 });
@@ -992,8 +1063,8 @@ app.get("/logout", (req, res) => {
     res.clearCookie("ziren.sid", {
       path: "/",
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: IS_PRODUCTION,
+      sameSite: "lax"
     });
 
     res.redirect("/");
@@ -1010,4 +1081,3 @@ initDb()
     console.error("DB init error:", err);
     process.exit(1);
   });
-

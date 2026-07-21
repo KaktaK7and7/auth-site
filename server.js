@@ -8,8 +8,16 @@ const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
 const { Pool } = require("pg");
 require("dotenv").config();
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const app = express();
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 
 cloudinary.config({
@@ -846,12 +854,12 @@ app.get("/profile", requireAuth, async (req, res) => {
 
     const totalCommands = statsResult.rows[0]?.total_commands || 0;
     const frequentCommands = frequentCommandsResult.rows;
-    const avatarUrl = user.avatar_url || "/images/Ziren.png";
+    const avatarUrl = escapeHtml(user.avatar_url || "/images/Ziren.png");
 
     const frequentCommandsHtml = frequentCommands.length
       ? frequentCommands.map((cmd) => `
           <div class="stat-list-item">
-            <span>${cmd.command_text}</span>
+            <span>${escapeHtml(cmd.command_text)}</span>
             <strong>${cmd.uses} раз</strong>
           </div>
         `).join("")
@@ -900,8 +908,8 @@ app.get("/profile", requireAuth, async (req, res) => {
 
                 <div class="profile-user-info">
                   <span class="section-kicker">Личный кабинет</span>
-                  <h1>${user.username}</h1>
-                  <p>${user.email}</p>
+                  <h1>${escapeHtml(user.username)}</h1>
+                  <p>${escapeHtml(user.email)}</p>
                   <div class="profile-meta">
                     <span>Регистрация: ${new Date(user.created_at).toLocaleDateString("ru-RU")}</span>
                     <span>Последний вход: ${user.last_login_at ? new Date(user.last_login_at).toLocaleString("ru-RU") : "нет данных"}</span>
@@ -1002,5 +1010,4 @@ initDb()
     console.error("DB init error:", err);
     process.exit(1);
   });
-
 

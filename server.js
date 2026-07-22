@@ -5,6 +5,7 @@ const pgSession = require("connect-pg-simple")(session);
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const multer = require("multer");
+const { rateLimit } = require("express-rate-limit");
 const { v2: cloudinary } = require("cloudinary");
 const { Pool } = require("pg");
 const {
@@ -22,6 +23,38 @@ const AI_INTERNAL_TOKEN = String(process.env.AI_INTERNAL_TOKEN || "").trim();
 const CORS_ALLOWED_ORIGINS = parseAllowedOrigins(
   process.env.CORS_ALLOWED_ORIGINS,
 );
+const ASSISTANT_MAX_MESSAGE_LENGTH = 10_000;
+
+const desktopLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    ok: false,
+    error: "Слишком много попыток входа. Попробуйте позже.",
+  }),
+});
+
+const webAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => res
+    .status(429)
+    .send("Слишком много попыток. Попробуйте снова через 15 минут."),
+});
+
+const assistantApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    error: "Слишком много запросов к ассистенту. Попробуйте немного позже.",
+  }),
+});
 
 if (IS_PRODUCTION && !SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required in production");
@@ -158,6 +191,8 @@ app.use(
   })
 );
 
+app.use("/api/assistant", assistantApiLimiter);
+
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -244,13 +279,23 @@ async function readAssistantResponse(response) {
   const text = await response.text();
 
   if (!text) {
-    return { ok: response.ok };
+    if (response.ok) {
+      return { ok: true };
+    }
+
+    const error = new Error("AI service returned an empty error response");
+    error.code = "AI_SERVICE_INVALID_RESPONSE";
+    throw error;
   }
 
   try {
     return JSON.parse(text);
   } catch (error) {
-    return { ok: response.ok, raw: text };
+    const invalidResponseError = new Error(
+      "AI service returned a non-JSON response",
+    );
+    invalidResponseError.code = "AI_SERVICE_INVALID_RESPONSE";
+    throw invalidResponseError;
   }
 }
 
@@ -345,6 +390,10 @@ function sendAssistantError(res, error, context) {
     return res.status(504).json({ error: "Assistant service timeout" });
   }
 
+  if (error.code === "AI_SERVICE_INVALID_RESPONSE") {
+    return res.status(502).json({ error: "Assistant service returned an invalid response" });
+  }
+
   return res.status(502).json({ error: "Assistant service unavailable" });
 }
 
@@ -422,9 +471,18 @@ app.post("/api/assistant/name", requireAssistantAuth, async (req, res) => {
 app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
   try {
     const { message, session_id = null } = req.body;
+    const normalizedMessage = String(message || "").trim();
 
-    if (!message || !String(message).trim()) {
+    if (!normalizedMessage) {
       return res.status(400).json({ error: "Message is required" });
+    }
+
+    if (normalizedMessage.length > ASSISTANT_MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({ error: "Message is too long" });
+    }
+
+    if (session_id !== null && (!Number.isInteger(session_id) || session_id < 0)) {
+      return res.status(400).json({ error: "Invalid session_id" });
     }
 
     const response = await assistantFetch("/chat", {
@@ -432,7 +490,7 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: req.assistantUser.id,
-        message: String(message).trim(),
+        message: normalizedMessage,
         session_id,
       }),
     });
@@ -575,7 +633,7 @@ app.post("/api/assistant/app-launcher/resolve", requireAssistantAuth, async (req
   }
 });
 
-app.post("/register", async (req, res) => {
+app.post("/register", webAuthLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -638,7 +696,7 @@ app.post("/register", async (req, res) => {
 
 
 
-app.post("/api/desktop/login", async (req, res) => {
+app.post("/api/desktop/login", desktopLoginLimiter, async (req, res) => {
   try {
     const { email, password, remember } = req.body;
 
@@ -828,7 +886,7 @@ app.post("/api/desktop/avatar", uploadAvatar.single("avatar"), async (req, res) 
 });
 
 
-app.post("/login", async (req, res) => {
+app.post("/login", webAuthLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 

@@ -215,7 +215,7 @@ async function saveAssistantName() {
     nameEl.textContent = savedName;
     nameInput.value = savedName;
     await loadPersona();
-    add("assistant", `Теперь меня зовут ${escapeHtml(savedName)}`);
+    add("assistant", `Теперь меня зовут ${savedName}`);
   } finally {
     saveNameBtn.disabled = false;
   }

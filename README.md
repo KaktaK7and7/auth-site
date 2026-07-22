@@ -28,10 +28,14 @@ are actually used by the desktop application. Do not use `*`.
 ## Deployment order
 
 1. Configure the same `AI_INTERNAL_TOKEN` in both backend services.
-2. Deploy `ziren-ai-service` and verify that `/health` returns `status: ok`.
-3. Deploy this service with `AI_SERVICE_URL` pointing to the AI service.
+2. Deploy this service with `AI_SERVICE_URL` pointing to the currently running
+   AI service. The old AI service safely ignores the additional internal header.
+3. Deploy `ziren-ai-service` and verify that `/health` returns `status: ok`.
 4. Verify web login, desktop login, `/api/desktop/me`, assistant chat, and
    desktop logout.
+
+Deploying the gateway first avoids an outage: once the new AI service starts,
+it immediately rejects requests that do not carry the internal token.
 
 The AI service intentionally rejects every non-health request that does not
 carry the internal token. The gateway derives the user ID from the verified web

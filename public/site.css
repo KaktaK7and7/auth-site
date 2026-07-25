@@ -779,6 +779,128 @@ a {
   background: rgba(164, 92, 255, 0.09);
 }
 
+.assistant-logic {
+  display: grid;
+  gap: 20px;
+}
+
+.assistant-logic__intro {
+  padding: 8px 0 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: end;
+  gap: 70px;
+}
+
+.assistant-logic__intro .site-eyebrow {
+  grid-column: 1 / -1;
+  margin-bottom: -42px;
+}
+
+.assistant-logic__intro h2 {
+  margin: 0;
+  font-size: clamp(42px, 5.4vw, 70px);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.assistant-logic__intro p {
+  margin: 0;
+  color: #aebccd;
+  font-size: 18px;
+  line-height: 1.76;
+}
+
+.assistant-logic__modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.assistant-logic__modes article {
+  min-height: 285px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--site-border);
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg, rgba(0, 245, 255, 0.055), transparent 52%),
+    var(--site-panel);
+  box-shadow: var(--site-shadow);
+}
+
+.assistant-logic__modes article:nth-child(2) {
+  border-color: rgba(164, 92, 255, 0.23);
+  background:
+    linear-gradient(145deg, rgba(164, 92, 255, 0.08), transparent 54%),
+    var(--site-panel);
+}
+
+.assistant-logic__mode-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--site-muted);
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.assistant-logic__mode-head span {
+  color: var(--site-cyan);
+}
+
+.assistant-logic__modes article:nth-child(2) .assistant-logic__mode-head span {
+  color: #c99bff;
+}
+
+.assistant-logic__modes h3 {
+  max-width: 520px;
+  margin: auto 0 14px;
+  font-size: clamp(25px, 2.7vw, 35px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.assistant-logic__modes p {
+  max-width: 540px;
+  margin: 0;
+  color: var(--site-muted);
+  line-height: 1.68;
+}
+
+.assistant-logic__account {
+  padding: 22px 26px;
+  display: grid;
+  grid-template-columns: 150px minmax(260px, 0.8fr) minmax(300px, 1fr);
+  align-items: center;
+  gap: 25px;
+  border: 1px solid rgba(0, 245, 255, 0.14);
+  border-radius: 20px;
+  background: rgba(0, 245, 255, 0.035);
+}
+
+.assistant-logic__account > span {
+  color: var(--site-cyan);
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.assistant-logic__account strong {
+  font-size: 17px;
+}
+
+.assistant-logic__account p {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .site-system {
   display: grid;
   grid-template-columns: 0.86fr 1.14fr;
@@ -1128,6 +1250,41 @@ a {
   color: var(--site-muted);
   font-size: 17px;
   line-height: 1.7;
+}
+
+.feedback-banner {
+  padding: 34px 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 40px;
+  border: 1px solid rgba(164, 92, 255, 0.24);
+  border-radius: 26px;
+  background:
+    linear-gradient(110deg, rgba(164, 92, 255, 0.1), transparent 45%),
+    rgba(6, 11, 21, 0.78);
+  box-shadow: var(--site-shadow);
+}
+
+.feedback-banner .site-eyebrow {
+  margin-bottom: 10px;
+}
+
+.feedback-banner h2 {
+  margin: 0;
+  font-size: clamp(31px, 4vw, 48px);
+  letter-spacing: -0.04em;
+}
+
+.feedback-banner p {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: var(--site-muted);
+  line-height: 1.68;
+}
+
+.feedback-banner .site-button {
+  min-width: 260px;
 }
 
 .site-footer {
@@ -1975,6 +2132,30 @@ a {
     position: static;
   }
 
+  .assistant-logic__intro {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .assistant-logic__intro .site-eyebrow {
+    grid-column: auto;
+    margin-bottom: 0;
+  }
+
+  .assistant-logic__account,
+  .feedback-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-banner {
+    gap: 24px;
+  }
+
+  .feedback-banner .site-button {
+    min-width: 0;
+    justify-self: start;
+  }
+
   .site-grid--3,
   .melissa-panel,
   .site-footer__grid,
@@ -2098,6 +2279,30 @@ a {
   .company-facts div + div {
     border-top: 1px solid rgba(0, 245, 255, 0.12);
     border-left: 0;
+  }
+
+  .assistant-logic__modes {
+    grid-template-columns: 1fr;
+  }
+
+  .assistant-logic__modes article {
+    min-height: 250px;
+    padding: 24px;
+  }
+
+  .assistant-logic__mode-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .assistant-logic__account,
+  .feedback-banner {
+    padding: 24px;
+  }
+
+  .feedback-banner .site-button {
+    width: 100%;
   }
 
   .site-hero__proof {

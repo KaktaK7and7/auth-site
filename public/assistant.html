@@ -79,47 +79,52 @@
         </section>
 
         <section class="site-section site-section--panel">
-          <div class="site-container site-system">
-            <div class="site-system__copy" data-reveal>
+          <div class="site-container assistant-logic">
+            <div class="assistant-logic__intro" data-reveal>
               <span class="site-eyebrow">Как устроен Assistant</span>
-              <h2>Быстрые команды и разговор — два отдельных контура</h2>
+              <h2>Команды и общение — разная логика</h2>
               <p>
-                Действия на компьютере не должны ждать ответа нейросети.
-                Поэтому управление Windows выполняется локально, а запросы к
-                компаньону проходят через аккаунт и серверный шлюз. Для
-                пользователя это одно приложение, но каждая часть занимается
-                своей задачей.
+                Команды подразумевают чёткое выполнение поставленной задачи, а
+                нейронный модуль позволяет взаимодействовать со свободной
+                структурой Ziren: просто общаться или узнавать что-то новое.
+                Для пользователя это одно приложение, но каждая часть
+                занимается своей задачей.
               </p>
-              <ul class="site-checklist">
-                <li>«Змея» активирует команды управления компьютером.</li>
-                <li>«Мелисса» открывает режим разговора с компаньоном.</li>
-                <li>Память и настройки профиля привязаны к аккаунту.</li>
-              </ul>
             </div>
 
-            <div class="site-system__console" data-reveal>
-              <div class="site-console__bar">
-                <span>ZIREN ASSISTANT // PIPELINE</span>
-                <span>LOCAL + CLOUD</span>
-              </div>
-              <div class="site-console__body">
-                <div class="site-console__line">
-                  <span>VOICE</span>
-                  <strong>Распознавание команды и определение режима</strong>
+            <div class="assistant-logic__modes">
+              <article data-reveal>
+                <div class="assistant-logic__mode-head">
+                  <span>01 / COMMANDS</span>
+                  <strong>Локальный контур</strong>
                 </div>
-                <div class="site-console__line">
-                  <span>LOCAL</span>
-                  <strong>Выполнение действий в Windows без ожидания AI</strong>
+                <h3>«Змея» активирует команды управления компьютером</h3>
+                <p>
+                  Команда распознаётся, сопоставляется с нужной функцией и
+                  выполняется без ожидания ответа нейросети.
+                </p>
+              </article>
+
+              <article data-reveal>
+                <div class="assistant-logic__mode-head">
+                  <span>02 / DIALOG</span>
+                  <strong>Нейронный модуль</strong>
                 </div>
-                <div class="site-console__line">
-                  <span>DIALOG</span>
-                  <strong>Авторизованный запрос к нейросетевому сервису</strong>
-                </div>
-                <div class="site-console__line">
-                  <span>PROFILE</span>
-                  <strong>Общие данные для сайта и desktop-приложения</strong>
-                </div>
-              </div>
+                <h3>«Мелисса» открывает режим общения с компаньоном</h3>
+                <p>
+                  В этом режиме нет жёсткой структуры команды: можно продолжить
+                  разговор, задать вопрос или узнать что-то новое.
+                </p>
+              </article>
+            </div>
+
+            <div class="assistant-logic__account" data-reveal>
+              <span>PROFILE / MEMORY</span>
+              <strong>Память и настройки профиля привязаны к аккаунту</strong>
+              <p>
+                Выбранное имя, характер и сохранённая информация доступны в
+                web-чате и приложении после авторизации.
+              </p>
             </div>
           </div>
         </section>

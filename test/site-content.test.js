@@ -19,6 +19,8 @@ test("home page presents Ziren as a company without assistant mascot content", (
   assert.match(home, /id="directions"/);
   assert.match(home, /data-community-ticker/);
   assert.match(home, /href="\/register\.html"/);
+  assert.match(home, /Одна среда для комьюнити и разработки/);
+  assert.match(home, /Предложить идею или оставить отзыв/);
   assert.doesNotMatch(home, /Мелисс/i);
   assert.doesNotMatch(home, /melissa-/i);
 });
@@ -29,6 +31,8 @@ test("assistant page owns Melissa details and personalized chat entry points", (
 
   assert.match(assistant, /id="companion"/);
   assert.match(assistant, /Мелисса — имя по умолчанию/);
+  assert.match(assistant, /Команды и общение — разная логика/);
+  assert.match(assistant, /class="assistant-logic__modes"/);
   assert.match(assistant, /data-assistant-chat-label/);
   assert.match(assistant, /Что мы дорабатываем/);
 });

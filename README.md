@@ -4,6 +4,16 @@ This service owns user sessions, desktop access tokens, and the public gateway
 to the private Ziren AI service. Browser and desktop clients must call
 `/api/assistant/*` here instead of calling the AI service directly.
 
+It also owns the shared Ziren profile used by the website and desktop app:
+
+- avatar, status and bio;
+- real command statistics and derived achievements;
+- opt-in public profiles and community ticker;
+- explicit consent flags for activity tracking and future AI context.
+
+Public profile and community visibility are disabled by default. Activity
+events are ignored unless the user explicitly enables activity tracking.
+
 ## Required production configuration
 
 Copy `.env.example` into the platform configuration and set real values for:
@@ -40,6 +50,21 @@ it immediately rejects requests that do not carry the internal token.
 The AI service intentionally rejects every non-health request that does not
 carry the internal token. The gateway derives the user ID from the verified web
 session or desktop bearer token and never trusts a client-supplied user ID.
+
+## Profile and activity endpoints
+
+- `GET /api/community/members` returns only real users who enabled community
+  visibility. It never returns email addresses.
+- `GET /community/:id` returns a public profile only when that user enabled it.
+- `GET /api/desktop/me` returns the shared profile, real statistics,
+  achievements, and consent settings.
+- `POST /api/desktop/activity` accepts a small allowlist of structured events
+  and stores them only when activity tracking is enabled. It records feature
+  IDs instead of raw recognized speech.
+
+The `ai_context_enabled` preference only marks whether stored safe events may be
+used in a future Melissa context bridge. This service does not send those
+events to the AI service yet.
 
 ## Local checks
 

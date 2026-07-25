@@ -1,68 +1,98 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Вход — Ziren</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="bg-glow glow-1"></div>
-  <div class="bg-glow glow-2"></div>
-
-  <header class="header">
-    <div class="container nav">
-      <a href="index.html" class="brand">
-        <img src="images/Ziren.png" alt="Ziren logo" class="brand-logo" />
-        <span>Ziren</span>
-      </a>
-
-      <nav class="nav-links">
-        <a href="index.html">Главная</a>
-        <a href="assistant.html">Ассистент</a>
-      </nav>
-
-      <div class="nav-actions">
-        <a class="btn btn-secondary" href="register.html">Регистрация</a>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход — Ziren</title>
+    <meta
+      name="description"
+      content="Вход в единый аккаунт сайта и Windows-приложения Ziren."
+    />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-container site-nav">
+        <a class="site-brand" href="/">
+          <img src="/images/Ziren.png" alt="" />
+          <span>ZIREN <small>ACCOUNT</small></span>
+        </a>
+        <span></span>
+        <div class="site-nav__actions">
+          <a class="site-button site-button--ghost" href="/">На главную</a>
+          <a
+            class="site-button site-button--primary site-button--compact"
+            href="/register.html"
+          >
+            Регистрация
+          </a>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <main class="auth-page">
-    <section class="auth-section container">
-      <div class="auth-card">
-        <span class="section-kicker">Авторизация</span>
-        <h1>Вход в аккаунт</h1>
-        <p class="auth-subtitle">
-          Войди в аккаунт Ziren, чтобы получить доступ к экосистеме и функциям ассистента.
-        </p>
+    <main class="auth-layout">
+      <section class="auth-layout__visual">
+        <img src="/images/melissa-full.webp" alt="Мелисса — компаньон Ziren" />
+        <div class="auth-layout__caption">
+          <span class="site-eyebrow">Welcome back</span>
+          <h1>Продолжим нашу общую историю</h1>
+          <p>
+            Один аккаунт связывает сайт, профиль, web-чат и настольное
+            приложение Ziren.
+          </p>
+        </div>
+      </section>
 
-        <!-- 🔴 ВОТ БЛОК ОШИБКИ -->
-        <p id="login-error" class="auth-error"></p>
+      <section class="auth-layout__form">
+        <div class="auth-card">
+          <span class="site-eyebrow">Авторизация</span>
+          <h2>Войти в Ziren</h2>
+          <p class="auth-card__lead">
+            Используй тот же email и пароль, что и в Windows-приложении.
+          </p>
 
-        <form action="/login" method="POST" class="auth-form">
-          <input type="email" name="email" placeholder="Email" required />
-          <input type="password" name="password" placeholder="Пароль" required />
-          <button class="btn btn-primary" type="submit">Войти</button>
-        </form>
+          <div class="auth-error" data-form-error hidden></div>
 
-        <p class="auth-switch">
-          Нет аккаунта?
-          <a href="register.html">Зарегистрироваться</a>
-        </p>
-      </div>
-    </section>
-  </main>
+          <form action="/login" method="post" class="auth-form">
+            <label class="auth-field">
+              <span>Email</span>
+              <input
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                maxlength="150"
+                required
+              />
+            </label>
+            <label class="auth-field">
+              <span>Пароль</span>
+              <input
+                type="password"
+                name="password"
+                placeholder="Введите пароль"
+                autocomplete="current-password"
+                maxlength="128"
+                required
+              />
+            </label>
+            <button class="site-button site-button--primary" type="submit">
+              Войти
+            </button>
+          </form>
 
-  <!-- 🔥 СКРИПТ ДЛЯ ОШИБКИ -->
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get("error");
-    const errorBox = document.getElementById("login-error");
+          <p class="auth-switch">
+            Нет аккаунта? <a href="/register.html">Создать профиль</a>
+          </p>
+          <p class="auth-note">
+            Пароль хранится только в виде стойкого хеша. Ziren никогда не
+            показывает пароль в профиле и не просит отправлять его в сообщениях.
+          </p>
+        </div>
+      </section>
+    </main>
 
-    if (error && errorBox) {
-      errorBox.textContent = decodeURIComponent(error);
-    }
-  </script>
-</body>
+    <script src="/site.js" defer></script>
+  </body>
 </html>

@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const {
   DEFAULT_CORS_ORIGINS,
+  escapeHtml,
   extractBearerToken,
   hashDesktopToken,
   parseAllowedOrigins,
@@ -50,4 +51,12 @@ test("development origins match the Tauri and Vite loopback hosts", () => {
   assert.equal(defaultOrigins.has("http://127.0.0.1:1420"), true);
   assert.equal(defaultOrigins.has("http://localhost:5173"), true);
   assert.equal(defaultOrigins.has("http://127.0.0.1:5173"), true);
+});
+
+
+test("escapeHtml neutralizes rendered user content", () => {
+  assert.equal(
+    escapeHtml(`<img src=x onerror="alert('x')">`),
+    "&lt;img src=x onerror=&quot;alert(&#039;x&#039;)&quot;&gt;",
+  );
 });

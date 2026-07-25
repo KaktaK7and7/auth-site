@@ -13,6 +13,11 @@ const {
   hashDesktopToken,
   parseAllowedOrigins,
 } = require("./lib/security");
+const {
+  buildProfileSummary,
+  buildUserPayload,
+} = require("./lib/profile");
+const { renderProfilePage } = require("./lib/profile-page");
 require("dotenv").config();
 const app = express();
 
@@ -24,6 +29,15 @@ const CORS_ALLOWED_ORIGINS = parseAllowedOrigins(
   process.env.CORS_ALLOWED_ORIGINS,
 );
 const ASSISTANT_MAX_MESSAGE_LENGTH = 10_000;
+const ALLOWED_ACTIVITY_EVENT_TYPES = new Set([
+  "assistant.started",
+  "command.completed",
+  "app.launched",
+  "media.started",
+  "media.paused",
+  "session.ended",
+]);
+const FEATURE_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{0,99}$/;
 
 const desktopLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -56,17 +70,26 @@ const assistantApiLimiter = rateLimit({
   }),
 });
 
+const communityApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 90,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+
+const activityApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 180,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    ok: false,
+    error: "Слишком много событий активности",
+  }),
+});
+
 if (IS_PRODUCTION && !SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required in production");
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 
@@ -215,6 +238,16 @@ async function initDb() {
   `);
 
   await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS bio VARCHAR(280) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS status_text VARCHAR(80) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS public_profile_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS show_in_community BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS activity_tracking_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS ai_context_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS user_sessions (
       sid varchar NOT NULL COLLATE "default",
       sess json NOT NULL,
@@ -266,6 +299,28 @@ async function initDb() {
       used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_user_commands_user_used_at
+    ON user_commands(user_id, used_at DESC);
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_activity_events (
+      id BIGSERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_type VARCHAR(64) NOT NULL,
+      feature_id VARCHAR(100) NOT NULL,
+      subject_label VARCHAR(120),
+      ai_context_allowed BOOLEAN NOT NULL DEFAULT FALSE,
+      occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_user_activity_events_user_occurred
+    ON user_activity_events(user_id, occurred_at DESC);
+  `);
 }
 
 function requireAuth(req, res, next) {
@@ -273,6 +328,34 @@ function requireAuth(req, res, next) {
     return res.redirect("/login.html");
   }
   next();
+}
+
+function ensureCsrfToken(req) {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString("hex");
+  }
+
+  return req.session.csrfToken;
+}
+
+function requireCsrf(req, res, next) {
+  const expected = String(req.session.csrfToken || "");
+  const submitted = String(req.body?.csrf_token || "");
+
+  if (!expected || !submitted || expected.length !== submitted.length) {
+    return res.status(403).send("Недействительный защитный токен формы");
+  }
+
+  const isValid = crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(submitted),
+  );
+
+  if (!isValid) {
+    return res.status(403).send("Недействительный защитный токен формы");
+  }
+
+  return next();
 }
 
 async function readAssistantResponse(response) {
@@ -316,7 +399,10 @@ async function getDesktopUserByToken(req) {
   const result = await pool.query(
     `
     SELECT users.id, users.username, users.email, users.avatar_url,
-           users.created_at, users.last_login_at
+           users.created_at, users.last_login_at, users.bio,
+           users.status_text, users.public_profile_enabled,
+           users.show_in_community, users.activity_tracking_enabled,
+           users.ai_context_enabled
     FROM desktop_sessions
     JOIN users ON users.id = desktop_sessions.user_id
     WHERE desktop_sessions.token_hash = $1
@@ -327,6 +413,61 @@ async function getDesktopUserByToken(req) {
   );
 
   return result.rows[0] || null;
+}
+
+async function getUserById(userId) {
+  const result = await pool.query(
+    `
+    SELECT id, username, email, avatar_url, created_at, last_login_at,
+           bio, status_text, public_profile_enabled, show_in_community,
+           activity_tracking_enabled, ai_context_enabled
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [userId],
+  );
+
+  return result.rows[0] || null;
+}
+
+async function getUserStats(userId) {
+  const result = await pool.query(
+    `
+    SELECT
+      COUNT(*)::int AS total_commands,
+      COUNT(DISTINCT command_text)::int AS distinct_commands
+    FROM user_commands
+    WHERE user_id = $1
+    `,
+    [userId],
+  );
+
+  return result.rows[0] || {
+    total_commands: 0,
+    distinct_commands: 0,
+  };
+}
+
+async function getUserPayload(user) {
+  const stats = await getUserStats(user.id);
+  return buildUserPayload(user, stats);
+}
+
+async function getTopCommands(userId) {
+  const result = await pool.query(
+    `
+    SELECT command_text, COUNT(*)::int AS uses
+    FROM user_commands
+    WHERE user_id = $1
+    GROUP BY command_text
+    ORDER BY uses DESC, command_text ASC
+    LIMIT 5
+    `,
+    [userId],
+  );
+
+  return result.rows;
 }
 
 
@@ -420,9 +561,48 @@ app.get("/api/me", (req, res) => {
     user: {
       id: req.session.user.id,
       username: req.session.user.username,
-      email: req.session.user.email
+      email: req.session.user.email,
     }
   });
+});
+
+app.get("/api/community/members", communityApiLimiter, async (_req, res) => {
+  try {
+    const [membersResult, countResult] = await Promise.all([
+      pool.query(`
+        SELECT id, username, avatar_url, public_profile_enabled
+        FROM users
+        WHERE show_in_community = TRUE
+        ORDER BY RANDOM()
+        LIMIT 24
+      `),
+      pool.query(`
+        SELECT COUNT(*)::int AS total
+        FROM users
+        WHERE show_in_community = TRUE
+      `),
+    ]);
+
+    res.set("Cache-Control", "no-store");
+
+    return res.json({
+      ok: true,
+      total: countResult.rows[0]?.total || 0,
+      members: membersResult.rows.map((member) => ({
+        username: member.username,
+        avatar_url: member.avatar_url || "/images/Ziren.png",
+        profile_url: member.public_profile_enabled
+          ? `/community/${member.id}`
+          : null,
+      })),
+    });
+  } catch (error) {
+    console.error("community members error:", error);
+    return res.status(503).json({
+      ok: false,
+      error: "Community service unavailable",
+    });
+  }
 });
 
 
@@ -636,31 +816,56 @@ app.post("/api/assistant/app-launcher/resolve", requireAssistantAuth, async (req
 app.post("/register", webAuthLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    const normalizedUsername = String(username || "").trim();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedPassword = String(password || "");
 
-    if (!username || !email || !password) {
-      return res.redirect("/register.html?error=Заполни%20все%20поля");
+    if (!normalizedUsername || !normalizedEmail || !normalizedPassword) {
+      return res.redirect(
+        `/register.html?error=${encodeURIComponent("Заполни все поля")}`,
+      );
     }
 
-    if (password.length < 6) {
-      return res.redirect("/register.html?error=Пароль%20должен%20быть%20не%20короче%206%20символов");
+    if (
+      normalizedUsername.length < 2
+      || normalizedUsername.length > 32
+      || /[\u0000-\u001f\u007f]/.test(normalizedUsername)
+    ) {
+      return res.redirect(
+        `/register.html?error=${encodeURIComponent("Ник должен содержать от 2 до 32 обычных символов")}`,
+      );
+    }
+
+    if (normalizedEmail.length > 150) {
+      return res.redirect(
+        `/register.html?error=${encodeURIComponent("Email слишком длинный")}`,
+      );
+    }
+
+    if (normalizedPassword.length < 8 || normalizedPassword.length > 128) {
+      return res.redirect(
+        `/register.html?error=${encodeURIComponent("Пароль должен содержать от 8 до 128 символов")}`,
+      );
     }
 
     const existing = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
+      "SELECT id FROM users WHERE LOWER(email) = $1",
+      [normalizedEmail]
     );
 
     if (existing.rows.length > 0) {
-      return res.redirect("/register.html?error=Пользователь%20с%20таким%20email%20уже%20существует");
+      return res.redirect(
+        `/register.html?error=${encodeURIComponent("Пользователь с таким email уже существует")}`,
+      );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(normalizedPassword, 10);
 
     const result = await pool.query(
       `INSERT INTO users (username, email, password_hash)
        VALUES ($1, $2, $3)
        RETURNING id, username, email`,
-      [username, email, passwordHash]
+      [normalizedUsername, normalizedEmail, passwordHash]
     );
 
     const newUser = result.rows[0];
@@ -708,8 +913,14 @@ app.post("/api/desktop/login", desktopLoginLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      "SELECT id, username, email, password_hash, avatar_url, created_at, last_login_at FROM users WHERE email = $1",
-      [email]
+      `
+      SELECT id, username, email, password_hash, avatar_url, created_at,
+             last_login_at, bio, status_text, public_profile_enabled,
+             show_in_community, activity_tracking_enabled, ai_context_enabled
+      FROM users
+      WHERE LOWER(email) = $1
+      `,
+      [String(email).trim().toLowerCase()]
     );
 
     if (result.rows.length === 0) {
@@ -733,6 +944,7 @@ app.post("/api/desktop/login", desktopLoginLimiter, async (req, res) => {
       "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1",
       [user.id]
     );
+    user.last_login_at = new Date().toISOString();
 
     await pool.query(
       "DELETE FROM desktop_sessions WHERE expires_at <= CURRENT_TIMESTAMP"
@@ -753,17 +965,12 @@ app.post("/api/desktop/login", desktopLoginLimiter, async (req, res) => {
       [user.id, tokenHash, expiresAt]
     );
 
+    const userPayload = await getUserPayload(user);
+
     return res.json({
       ok: true,
       token,
-      user: {
-        id: String(user.id),
-        username: user.username,
-        email: user.email,
-        avatar_url: user.avatar_url || "/images/Ziren.png",
-        created_at: user.created_at,
-        last_login_at: new Date().toISOString(),
-      },
+      user: userPayload,
     });
   } catch (error) {
     console.error("desktop login error:", error);
@@ -789,16 +996,11 @@ app.get("/api/desktop/me", async (req, res) => {
       });
     }
 
+    const userPayload = await getUserPayload(user);
+
     return res.json({
       ok: true,
-      user: {
-        id: String(user.id),
-        username: user.username,
-        email: user.email,
-        avatar_url: user.avatar_url || "/images/Ziren.png",
-        created_at: user.created_at,
-        last_login_at: user.last_login_at,
-      },
+      user: userPayload,
     });
   } catch (error) {
     console.error("desktop me error:", error);
@@ -863,17 +1065,12 @@ app.post("/api/desktop/avatar", uploadAvatar.single("avatar"), async (req, res) 
       "UPDATE users SET avatar_url = $1 WHERE id = $2",
       [avatarUrl, user.id]
     );
+    user.avatar_url = avatarUrl;
+    const userPayload = await getUserPayload(user);
 
     return res.json({
       ok: true,
-      user: {
-        id: String(user.id),
-        username: user.username,
-        email: user.email,
-        avatar_url: avatarUrl,
-        created_at: user.created_at,
-        last_login_at: user.last_login_at,
-      },
+      user: userPayload,
     });
   } catch (error) {
     console.error("desktop avatar upload error:", error);
@@ -885,18 +1082,123 @@ app.post("/api/desktop/avatar", uploadAvatar.single("avatar"), async (req, res) 
   }
 });
 
+app.post("/api/desktop/activity", activityApiLimiter, async (req, res) => {
+  try {
+    const user = await getDesktopUserByToken(req);
+
+    if (!user) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid session",
+      });
+    }
+
+    if (!user.activity_tracking_enabled) {
+      return res.json({
+        ok: true,
+        stored: false,
+        reason: "activity_tracking_disabled",
+      });
+    }
+
+    const eventType = String(req.body?.event_type || "").trim();
+    const featureId = String(req.body?.feature_id || "").trim().toLowerCase();
+    const subjectLabel = String(req.body?.subject_label || "").trim();
+
+    if (!ALLOWED_ACTIVITY_EVENT_TYPES.has(eventType)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Unsupported activity event",
+      });
+    }
+
+    if (!FEATURE_ID_PATTERN.test(featureId)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid feature_id",
+      });
+    }
+
+    if (
+      subjectLabel.length > 120
+      || /[\u0000-\u001f\u007f]/.test(subjectLabel)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid subject_label",
+      });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `
+        INSERT INTO user_activity_events (
+          user_id,
+          event_type,
+          feature_id,
+          subject_label,
+          ai_context_allowed
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          user.id,
+          eventType,
+          featureId,
+          subjectLabel || null,
+          Boolean(user.ai_context_enabled),
+        ],
+      );
+
+      if (eventType === "command.completed") {
+        await client.query(
+          `
+          INSERT INTO user_commands (user_id, command_text)
+          VALUES ($1, $2)
+          `,
+          [user.id, featureId],
+        );
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    return res.status(201).json({
+      ok: true,
+      stored: true,
+      ai_context_allowed: Boolean(user.ai_context_enabled),
+    });
+  } catch (error) {
+    console.error("desktop activity error:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Не удалось сохранить событие активности",
+    });
+  }
+});
+
 
 app.post("/login", webAuthLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedPassword = String(password || "");
 
-    if (!email || !password) {
+    if (!normalizedEmail || !normalizedPassword) {
       return res.redirect("/login.html?error=Заполни%20email%20и%20пароль");
     }
 
     const result = await pool.query(
-      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
-      [email]
+      "SELECT id, username, email, password_hash FROM users WHERE LOWER(email) = $1",
+      [normalizedEmail]
     );
 
     if (result.rows.length === 0) {
@@ -904,7 +1206,10 @@ app.post("/login", webAuthLimiter, async (req, res) => {
     }
 
     const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const isMatch = await bcrypt.compare(
+      normalizedPassword,
+      user.password_hash,
+    );
 
     if (!isMatch) {
       return res.redirect("/login.html?error=Неверный%20email%20или%20пароль");
@@ -947,32 +1252,11 @@ app.post("/login", webAuthLimiter, async (req, res) => {
 app.get("/profile", requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
-
-    const userResult = await pool.query(
-      `SELECT id, username, email, created_at, avatar_url, last_login_at
-       FROM users
-       WHERE id = $1`,
-      [userId]
-    );
-
-    const statsResult = await pool.query(
-      `SELECT COUNT(*)::int AS total_commands
-       FROM user_commands
-       WHERE user_id = $1`,
-      [userId]
-    );
-
-    const frequentCommandsResult = await pool.query(
-      `SELECT command_text, COUNT(*)::int AS uses
-       FROM user_commands
-       WHERE user_id = $1
-       GROUP BY command_text
-       ORDER BY uses DESC, command_text ASC
-       LIMIT 5`,
-      [userId]
-    );
-
-    const user = userResult.rows[0];
+    const [user, stats, topCommands] = await Promise.all([
+      getUserById(userId),
+      getUserStats(userId),
+      getTopCommands(userId),
+    ]);
 
     if (!user) {
       req.session.destroy(() => {
@@ -981,115 +1265,115 @@ app.get("/profile", requireAuth, async (req, res) => {
       return;
     }
 
-    const totalCommands = statsResult.rows[0]?.total_commands || 0;
-    const frequentCommands = frequentCommandsResult.rows;
-    const avatarUrl = escapeHtml(user.avatar_url || "/images/Ziren.png");
+    const summary = buildProfileSummary(user, stats);
+    const csrfToken = ensureCsrfToken(req);
 
-    const frequentCommandsHtml = frequentCommands.length
-      ? frequentCommands.map((cmd) => `
-          <div class="stat-list-item">
-            <span>${escapeHtml(cmd.command_text)}</span>
-            <strong>${cmd.uses} раз</strong>
-          </div>
-        `).join("")
-      : `<p class="empty-text">Пока команд нет</p>`;
-
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="ru">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Профиль — Ziren</title>
-        <link rel="stylesheet" href="/style.css" />
-      </head>
-      <body>
-        <div class="bg-glow glow-1"></div>
-        <div class="bg-glow glow-2"></div>
-
-        <header class="header">
-          <div class="container nav">
-            <a href="/" class="brand">
-              <img src="/images/Ziren.png" class="brand-logo" alt="Ziren logo" />
-              <span>Ziren</span>
-            </a>
-
-            <nav class="nav-links">
-              <a href="/">Главная</a>
-              <a href="/assistant">Ассистент</a>
-              <a href="/profile" class="active-link">Профиль</a>
-            </nav>
-
-            <div class="nav-actions">
-              <a class="btn btn-secondary" href="/logout">Выйти</a>
-            </div>
-          </div>
-        </header>
-
-        <main class="profile-page">
-          <section class="container profile-layout">
-
-            <div class="profile-main-card">
-              <div class="profile-top">
-                <div class="profile-avatar-wrap">
-                  <img src="${avatarUrl}" class="profile-avatar" alt="avatar" />
-                </div>
-
-                <div class="profile-user-info">
-                  <span class="section-kicker">Личный кабинет</span>
-                  <h1>${escapeHtml(user.username)}</h1>
-                  <p>${escapeHtml(user.email)}</p>
-                  <div class="profile-meta">
-                    <span>Регистрация: ${new Date(user.created_at).toLocaleDateString("ru-RU")}</span>
-                    <span>Последний вход: ${user.last_login_at ? new Date(user.last_login_at).toLocaleString("ru-RU") : "нет данных"}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="profile-actions">
-                <form action="/upload-avatar" method="POST" enctype="multipart/form-data" class="avatar-form">
-                  <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp" required />
-                  <button class="btn btn-primary" type="submit">Сменить аватар</button>
-                </form>
-              </div>
-            </div>
-
-            <div class="profile-stats-grid">
-              <div class="profile-stat-card">
-                <span class="section-kicker">Статистика</span>
-                <h2>${totalCommands}</h2>
-                <p>Всего команд</p>
-              </div>
-
-              <div class="profile-stat-card">
-                <span class="section-kicker">Активность</span>
-                <h2>${frequentCommands.length}</h2>
-                <p>Команд в топе</p>
-              </div>
-            </div>
-
-            <div class="profile-wide-card">
-              <div class="section-head">
-                <span class="section-kicker">Частые команды</span>
-                <h2>Топ команд</h2>
-              </div>
-              <div class="stat-list">
-                ${frequentCommandsHtml}
-              </div>
-            </div>
-
-          </section>
-        </main>
-      </body>
-      </html>
-    `);
+    return res.send(
+      renderProfilePage({
+        user,
+        summary,
+        topCommands,
+        csrfToken,
+      }),
+    );
   } catch (error) {
     console.error(error);
     res.status(500).send("Ошибка профиля");
   }
 });
 
-app.post("/upload-avatar", requireAuth, uploadAvatar.single("avatar"), async (req, res) => {
+app.get("/community/:id", async (req, res) => {
+  try {
+    const userId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(404).send("Профиль не найден");
+    }
+
+    const [user, stats] = await Promise.all([
+      getUserById(userId),
+      getUserStats(userId),
+    ]);
+
+    if (!user || !user.public_profile_enabled) {
+      return res.status(404).send("Профиль не найден или закрыт");
+    }
+
+    const summary = buildProfileSummary(user, stats);
+
+    res.set("Cache-Control", "private, no-store");
+    return res.send(
+      renderProfilePage({
+        user,
+        summary,
+        publicView: true,
+      }),
+    );
+  } catch (error) {
+    console.error("public profile error:", error);
+    return res.status(500).send("Ошибка загрузки профиля");
+  }
+});
+
+app.post(
+  "/profile/settings",
+  webAuthLimiter,
+  requireAuth,
+  requireCsrf,
+  async (req, res) => {
+    try {
+      const statusText = String(req.body.status_text || "").trim();
+      const bio = String(req.body.bio || "").trim();
+
+      if (
+        statusText.length > 80
+        || bio.length > 280
+        || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(
+          `${statusText}${bio}`,
+        )
+      ) {
+        return res.status(400).send("Некорректные данные профиля");
+      }
+
+      const publicProfileEnabled =
+        req.body.public_profile_enabled === "true";
+      const showInCommunity = req.body.show_in_community === "true";
+      const activityTrackingEnabled =
+        req.body.activity_tracking_enabled === "true";
+      const aiContextEnabled =
+        activityTrackingEnabled && req.body.ai_context_enabled === "true";
+
+      await pool.query(
+        `
+        UPDATE users
+        SET bio = $1,
+            status_text = $2,
+            public_profile_enabled = $3,
+            show_in_community = $4,
+            activity_tracking_enabled = $5,
+            ai_context_enabled = $6
+        WHERE id = $7
+        `,
+        [
+          bio,
+          statusText,
+          publicProfileEnabled,
+          showInCommunity,
+          activityTrackingEnabled,
+          aiContextEnabled,
+          req.session.user.id,
+        ],
+      );
+
+      return res.redirect("/profile");
+    } catch (error) {
+      console.error("profile settings error:", error);
+      return res.status(500).send("Не удалось сохранить настройки профиля");
+    }
+  },
+);
+
+app.post("/upload-avatar", requireAuth, uploadAvatar.single("avatar"), requireCsrf, async (req, res) => {
   try {
     const userId = req.session.user.id;
 
@@ -1112,7 +1396,11 @@ app.post("/upload-avatar", requireAuth, uploadAvatar.single("avatar"), async (re
   }
 });
 
-app.get("/logout", (req, res) => {
+app.get("/logout", (_req, res) => {
+  return res.redirect("/profile");
+});
+
+app.post("/logout", requireAuth, requireCsrf, (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error("Logout error:", err);

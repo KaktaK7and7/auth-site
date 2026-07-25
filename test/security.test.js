@@ -41,3 +41,13 @@ test("parseAllowedOrigins uses safe defaults and supports explicit overrides", (
     ["https://one.example", "https://two.example"],
   );
 });
+
+
+test("development origins match the Tauri and Vite loopback hosts", () => {
+  const defaultOrigins = parseAllowedOrigins("");
+
+  assert.equal(defaultOrigins.has("http://localhost:1420"), true);
+  assert.equal(defaultOrigins.has("http://127.0.0.1:1420"), true);
+  assert.equal(defaultOrigins.has("http://localhost:5173"), true);
+  assert.equal(defaultOrigins.has("http://127.0.0.1:5173"), true);
+});

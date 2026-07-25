@@ -6,6 +6,26 @@ function createAuthLink(label, href, className = "site-button site-button--ghost
   return link;
 }
 
+let webSessionRequest;
+
+function loadWebSession() {
+  if (!webSessionRequest) {
+    webSessionRequest = fetch("/api/me", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error("Session request failed");
+      }
+
+      return response.json();
+    });
+  }
+
+  return webSessionRequest;
+}
+
 async function updateAuthNavigation() {
   const containers = document.querySelectorAll("[data-auth-container]");
 
@@ -14,12 +34,7 @@ async function updateAuthNavigation() {
   }
 
   try {
-    const response = await fetch("/api/me", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-    });
-    const data = await response.json();
+    const data = await loadWebSession();
 
     containers.forEach((container) => {
       container.replaceChildren();
@@ -46,6 +61,61 @@ async function updateAuthNavigation() {
     });
   } catch (error) {
     console.error("Не удалось обновить состояние авторизации", error);
+  }
+}
+
+async function updateAssistantChatLabels() {
+  const labels = document.querySelectorAll("[data-assistant-chat-label]");
+
+  if (!labels.length) {
+    return;
+  }
+
+  try {
+    const session = await loadWebSession();
+
+    if (!session.loggedIn) {
+      return;
+    }
+
+    const response = await fetch("/api/assistant/persona", {
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    const assistantName = String(data.name || "").trim();
+
+    if (
+      !assistantName
+      || assistantName.length > 40
+      || /[\u0000-\u001f\u007f]/.test(assistantName)
+    ) {
+      return;
+    }
+
+    labels.forEach((label) => {
+      const shortLabel = label.dataset.assistantChatLabel === "short";
+      const defaultName =
+        assistantName.toLocaleLowerCase("ru-RU") === "мелисса";
+
+      if (shortLabel) {
+        label.textContent = defaultName
+          ? "Чат с Мелиссой"
+          : `Чат — ${assistantName}`;
+        return;
+      }
+
+      label.textContent = defaultName
+        ? "Открыть чат с Мелиссой"
+        : `Открыть чат — ${assistantName}`;
+    });
+  } catch {
+    // Страница остаётся с понятной подписью по умолчанию.
   }
 }
 
@@ -273,6 +343,7 @@ function setupRevealAnimations() {
 
 document.addEventListener("DOMContentLoaded", () => {
   updateAuthNavigation();
+  updateAssistantChatLabels();
   loadCommunityTicker();
   showFormErrorFromQuery();
   setupMobileNavigation();

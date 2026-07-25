@@ -3,25 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ziren — голосовой AI-компаньон для Windows</title>
+    <title>Ziren — разработка цифровых продуктов</title>
     <meta
       name="description"
-      content="Ziren — развивающийся голосовой ассистент для Windows: локальные команды, AI-компаньон Мелисса, память, профиль и будущая социальная экосистема."
+      content="Ziren разрабатывает desktop-приложения, интеллектуальные интерфейсы и сервисы, которые объединяют продукты и пользователей в одной экосистеме."
     />
     <link rel="canonical" href="https://www.ziren.store/" />
     <link rel="icon" type="image/png" href="/images/Ziren.png" />
-    <link rel="preload" as="image" href="/images/melissa-hero.webp" />
+    <link rel="preload" as="image" href="/images/Ziren.png" />
     <link rel="stylesheet" href="/site.css" />
 
-    <meta property="og:title" content="Ziren — цифровой напарник, который растёт вместе с тобой" />
+    <meta property="og:title" content="Ziren — разработка цифровых продуктов" />
     <meta
       property="og:description"
-      content="Голосовое управление Windows, AI-компаньон Мелисса, память и будущая экосистема общения."
+      content="Desktop-приложения, интеллектуальные интерфейсы и собственная цифровая экосистема."
     />
-    <meta property="og:image" content="https://www.ziren.store/images/melissa-hero.webp" />
+    <meta property="og:image" content="https://www.ziren.store/images/Ziren.png" />
     <meta property="og:url" content="https://www.ziren.store/" />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
   </head>
 
   <body>
@@ -30,7 +30,7 @@
         <div class="site-container site-nav">
           <a class="site-brand" href="/" aria-label="Ziren — главная">
             <img src="/images/Ziren.png" alt="" />
-            <span>ZIREN <small>DIGITAL COMPANION</small></span>
+            <span>ZIREN <small>TECHNOLOGY &amp; PRODUCTS</small></span>
           </a>
 
           <button
@@ -45,10 +45,10 @@
 
           <nav class="site-nav__links" aria-label="Основная навигация" data-nav-links>
             <a href="/" aria-current="page">Главная</a>
-            <a href="/assistant.html">Ассистент</a>
-            <a href="#melissa">Мелисса</a>
+            <a href="#about">О Ziren</a>
+            <a href="#directions">Направления</a>
             <a href="#community">Сообщество</a>
-            <a href="#roadmap">Развитие</a>
+            <a href="/assistant.html">Ассистент</a>
           </nav>
 
           <div class="site-nav__actions" data-auth-container>
@@ -64,178 +64,170 @@
       </header>
 
       <main>
-        <section class="site-hero">
-          <div class="site-hero__media" aria-hidden="true">
-            <img src="/images/melissa-hero.webp" alt="" />
-          </div>
-
-          <div class="site-container site-hero__content">
-            <div>
-              <span class="site-status">Windows alpha в разработке</span>
-              <h1>Не просто ассистент. <span>Твой цифровой напарник.</span></h1>
-              <p class="site-hero__lead">
-                Ziren объединяет голосовое управление компьютером и Мелиссу —
-                AI-компаньона с характером и управляемой памятью. Мы строим
-                продукт открыто: показываем то, что уже работает, и честно
-                отмечаем то, что ещё создаётся.
+        <section class="company-hero">
+          <div class="site-container company-hero__layout">
+            <div class="company-hero__copy">
+              <span class="site-status">Независимый технологический проект</span>
+              <h1>Создаём продукты, которыми <span>удобно пользоваться.</span></h1>
+              <p>
+                Ziren разрабатывает программные продукты для повседневных
+                цифровых задач. Мы соединяем desktop-разработку,
+                интеллектуальные интерфейсы и онлайн-сервисы в одной понятной
+                системе.
               </p>
-
               <div class="site-hero__actions">
                 <a class="site-button site-button--primary" href="/register.html">
                   Создать аккаунт
                 </a>
-                <a class="site-button site-button--ghost" href="/assistant.html">
-                  Посмотреть возможности
+                <a class="site-button site-button--ghost" href="#about">
+                  Узнать о Ziren
                 </a>
               </div>
+            </div>
 
-              <div class="site-hero__proof" aria-label="Технологии Ziren">
-                <div class="site-proof">
-                  <strong>Vosk + Silero</strong>
-                  <span>локальный голосовой контур</span>
-                </div>
-                <div class="site-proof">
-                  <strong>Tauri + React</strong>
-                  <span>нативное приложение Windows</span>
-                </div>
-                <div class="site-proof">
-                  <strong>Мелисса</strong>
-                  <span>AI, персона и память</span>
-                </div>
+            <div class="company-hero__identity" aria-label="Логотип Ziren">
+              <div class="company-hero__orbit" aria-hidden="true"></div>
+              <div class="company-hero__logo">
+                <img src="/images/Ziren.png" alt="Ziren" />
+              </div>
+              <strong>ZIREN</strong>
+              <span>SOFTWARE · INTELLIGENCE · COMMUNITY</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section" id="about">
+          <div class="site-container company-about">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">О проекте</span>
+              <h2>Одна среда для продуктов и людей</h2>
+            </div>
+
+            <div class="company-about__copy" data-reveal>
+              <p>
+                Ziren начался с идеи упростить работу с компьютером и постепенно
+                вырос в более широкий проект. Сегодня мы создаём собственные
+                приложения, общую систему аккаунтов и основу сообщества, в
+                котором каждый продукт дополняет остальные.
+              </p>
+              <p>
+                Мы развиваем проект поэтапно: сначала доводим до надёжного
+                состояния основную функцию, затем расширяем её и только после
+                проверки добавляем следующий слой. Так продукт остаётся
+                понятным, а обещания не опережают реальную разработку.
+              </p>
+            </div>
+
+            <div class="company-facts" data-reveal>
+              <div>
+                <strong>01</strong>
+                <span>Собственная разработка</span>
+              </div>
+              <div>
+                <strong>02</strong>
+                <span>Единый аккаунт</span>
+              </div>
+              <div>
+                <strong>03</strong>
+                <span>Развитие вместе с сообществом</span>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="site-section" id="ready">
+        <section class="site-section site-section--panel" id="directions">
           <div class="site-container">
             <div class="site-section__head site-section__head--split" data-reveal>
               <div>
-                <span class="site-eyebrow">Состояние продукта</span>
-                <h2>Что уже работает</h2>
+                <span class="site-eyebrow">Чем занимается Ziren</span>
+                <h2>Направления разработки</h2>
               </div>
               <p>
-                Это не список обещаний. Ниже — функции, которые уже существуют
-                в текущей архитектуре Ziren и проходят наше тестирование.
+                Мы работаем над технологиями, которые могут использовать одну
+                учётную запись, общий профиль и согласованные правила работы с
+                данными.
               </p>
             </div>
 
             <div class="site-grid site-grid--4">
               <article class="site-card" data-reveal>
-                <span class="site-card__index">01 / VOICE</span>
-                <span class="site-card__tag">Работает</span>
-                <h3>Локальный голос</h3>
+                <span class="site-card__index">01 / DESKTOP</span>
+                <h3>Приложения для компьютера</h3>
                 <p>
-                  Распознавание через Vosk, озвучивание через Silero, wake-word
-                  режим и остановка речи голосовой командой.
+                  Полноценные Windows-продукты с продуманным интерфейсом,
+                  локальными функциями и понятными настройками.
                 </p>
               </article>
 
               <article class="site-card" data-reveal>
-                <span class="site-card__index">02 / CONTROL</span>
-                <span class="site-card__tag">Работает</span>
-                <h3>Управление Windows</h3>
+                <span class="site-card__index">02 / INTERFACES</span>
+                <h3>Интеллектуальные интерфейсы</h3>
                 <p>
-                  Запуск приложений и Steam-игр, управление окнами, системной
-                  громкостью и базовыми медиа-командами.
+                  Голос, автоматизация и AI там, где они действительно
+                  сокращают лишние действия и помогают быстрее получить
+                  результат.
                 </p>
               </article>
 
               <article class="site-card" data-reveal>
-                <span class="site-card__index">03 / AI</span>
-                <span class="site-card__tag">Работает</span>
-                <h3>Мелисса и память</h3>
+                <span class="site-card__index">03 / IDENTITY</span>
+                <h3>Аккаунт и профиль</h3>
                 <p>
-                  Облачный AI-сервис, история диалогов, персона, пресеты
-                  характера и редактируемые элементы долговременной памяти.
+                  Единые данные пользователя, настройки приватности,
+                  достижения и синхронизация между сайтом и приложениями.
                 </p>
               </article>
 
               <article class="site-card" data-reveal>
-                <span class="site-card__index">04 / IDENTITY</span>
-                <span class="site-card__tag">Работает</span>
-                <h3>Единый аккаунт</h3>
+                <span class="site-card__index">04 / NETWORK</span>
+                <h3>Сообщество и сервисы</h3>
                 <p>
-                  Авторизация сайта и приложения, защищённые desktop-сессии,
-                  синхронизация аватара и базовых данных профиля.
+                  Друзья, общение, пользовательский контент и площадки для
+                  авторов — по мере готовности основных продуктов.
                 </p>
               </article>
             </div>
           </div>
         </section>
 
-        <section class="site-section site-section--panel">
-          <div class="site-container site-system">
-            <div class="site-system__console" data-reveal>
-              <div class="site-console__bar">
-                <span>ZIREN_CORE // LIVE PIPELINE</span>
-                <span>LOCAL + CLOUD</span>
-              </div>
-              <div class="site-console__body">
-                <div class="site-console__line">
-                  <span>VOICE_01</span>
-                  <strong>«Змея, открой Discord» → локальная команда</strong>
-                </div>
-                <div class="site-console__line">
-                  <span>AI_02</span>
-                  <strong>«Мелисса, как дела?» → защищённый AI gateway</strong>
-                </div>
-                <div class="site-console__line">
-                  <span>MEMORY_03</span>
-                  <strong>Память можно просматривать, менять и удалять</strong>
-                </div>
-                <div class="site-console__line">
-                  <span>PROFILE_04</span>
-                  <strong>Один аккаунт для сайта и Windows-приложения</strong>
-                </div>
-              </div>
+        <section class="site-section">
+          <div class="site-container company-principles">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">Подход к работе</span>
+              <h2>На чём держится проект</h2>
             </div>
 
-            <div class="site-system__copy" data-reveal>
-              <span class="site-eyebrow">Два режима — одна система</span>
-              <h2>«Змея» выполняет. Мелисса общается.</h2>
-              <p>
-                Локальные команды не должны ждать нейросеть, а личный разговор
-                не должен превращаться в набор сухих инструкций. Поэтому Ziren
-                разделяет быстрый контур управления компьютером и AI-контур
-                Мелиссы, сохраняя их частью одного продукта.
-              </p>
-              <ul class="site-checklist">
-                <li>Команды выполняются модульным локальным ядром.</li>
-                <li>AI-запросы проходят через аккаунт и защищённый gateway.</li>
-                <li>Пользователь управляет памятью и будущим сбором активности.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="site-section" id="melissa">
-          <div class="site-container">
-            <div class="melissa-panel" data-reveal>
-              <div class="melissa-panel__copy">
-                <span class="site-eyebrow">Melissa // companion layer</span>
-                <h2>Компаньон, а не безликий чат-бот</h2>
-                <p>
-                  Цель Мелиссы — помнить важное, понимать доступные функции
-                  Ziren и со временем формировать уникальный стиль отношений с
-                  каждым человеком. Контекст компьютера будет передаваться
-                  только как понятные события и только с разрешения владельца.
-                </p>
-                <div class="melissa-panel__points">
-                  <span>Управляемая память</span>
-                  <span>Характер и тон</span>
-                  <span>Общая история</span>
-                  <span>Инициатива</span>
-                  <span>Прозрачная приватность</span>
+            <div class="company-principles__list">
+              <article data-reveal>
+                <span>01</span>
+                <div>
+                  <h3>Польза важнее количества функций</h3>
+                  <p>
+                    Новая возможность имеет смысл только тогда, когда она
+                    решает конкретную задачу и работает предсказуемо.
+                  </p>
                 </div>
-              </div>
-              <div class="melissa-panel__media">
-                <img
-                  src="/images/melissa-full.webp"
-                  alt="Мелисса — цифровой компаньон Ziren"
-                  loading="lazy"
-                />
-              </div>
+              </article>
+              <article data-reveal>
+                <span>02</span>
+                <div>
+                  <h3>Данные остаются под контролем пользователя</h3>
+                  <p>
+                    Публичность профиля, участие в ленте и будущий учёт
+                    активности включаются отдельно и добровольно.
+                  </p>
+                </div>
+              </article>
+              <article data-reveal>
+                <span>03</span>
+                <div>
+                  <h3>Разработка без выдуманных обещаний</h3>
+                  <p>
+                    На страницах продуктов мы отдельно показываем готовые
+                    возможности, ограничения и то, что находится в работе.
+                  </p>
+                </div>
+              </article>
             </div>
           </div>
         </section>
@@ -254,67 +246,18 @@
           </div>
         </section>
 
-        <section class="site-section" id="roadmap">
-          <div class="site-container">
-            <div class="site-section__head" data-reveal>
-              <span class="site-eyebrow">Куда движется Ziren</span>
-              <h2>От полезного ассистента к целой экосистеме</h2>
-              <p>
-                Мы не пытаемся одновременно запустить всё. Сначала делаем
-                надёжный Windows-продукт и живую Мелиссу, затем открываем
-                социальный слой и только после аудитории — площадку авторов.
-              </p>
-            </div>
-
-            <div class="site-roadmap">
-              <article class="site-roadmap__item" data-reveal>
-                <span>ЭТАП 01</span>
-                <h3>Windows Alpha</h3>
-                <p>
-                  Безопасная авторизация, стабильный голос, команды, установщик,
-                  диагностика и проверяемые обновления.
-                </p>
-              </article>
-              <article class="site-roadmap__item" data-reveal>
-                <span>ЭТАП 02</span>
-                <h3>Живая Мелисса</h3>
-                <p>
-                  Быстрые ответы, прозрачная память, отношения, лор, знание
-                  функций и разрешённый контекст компьютера.
-                </p>
-              </article>
-              <article class="site-roadmap__item" data-reveal>
-                <span>ЭТАП 03</span>
-                <h3>Ziren Network</h3>
-                <p>
-                  Друзья, псевдонимы, личные сообщения, голосовая отправка,
-                  озвучивание и позднее — звонки и демонстрация экрана.
-                </p>
-              </article>
-              <article class="site-roadmap__item" data-reveal>
-                <span>ЭТАП 04</span>
-                <h3>Платформа авторов</h3>
-                <p>
-                  Кастомизация профиля, достижения, пользовательские дизайны,
-                  торговая площадка и в перспективе магазин игр.
-                </p>
-              </article>
-            </div>
-          </div>
-        </section>
-
         <section class="site-section site-section--tight">
           <div class="site-container">
             <div class="site-cta" data-reveal>
-              <span class="site-eyebrow">Ранний этап</span>
-              <h2>Создай профиль сейчас и расти вместе с Ziren</h2>
+              <span class="site-eyebrow">Аккаунт Ziren</span>
+              <h2>Один профиль для сайта и приложений</h2>
               <p>
-                Аккаунт уже связывает сайт и приложение. Новые достижения,
-                друзья, сообщения и кастомизация будут появляться постепенно —
-                без фальшивых цифр и скрытого сбора данных.
+                Создай аккаунт, настрой профиль и сам выбери, какие данные будут
+                видны другим участникам. По мере выхода новых продуктов этот же
+                аккаунт будет связывать их в одной системе.
               </p>
               <a class="site-button site-button--primary" href="/register.html">
-                Присоединиться
+                Зарегистрироваться
               </a>
             </div>
           </div>
@@ -330,12 +273,13 @@
                 <span>ZIREN</span>
               </a>
               <p>
-                Независимый проект голосового AI-компаньона и будущей цифровой
-                экосистемы. Создаётся открыто и развивается поэтапно.
+                Независимый технологический проект. Разрабатываем
+                desktop-приложения, интеллектуальные интерфейсы и собственные
+                онлайн-сервисы.
               </p>
             </div>
             <div class="site-footer__column">
-              <strong>Продукт</strong>
+              <strong>Продукты</strong>
               <a href="/assistant.html">Ziren Assistant</a>
               <a href="/register.html">Создать аккаунт</a>
               <a href="/login.html">Войти</a>

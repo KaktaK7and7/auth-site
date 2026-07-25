@@ -58,12 +58,17 @@
               <span class="site-status">Активная разработка</span>
               <h1>Ziren <span>Assistant</span></h1>
               <p class="site-hero__lead">
-                Настольный голосовой ассистент для Windows, в котором быстрые
-                локальные команды соединяются с AI-компаньоном Мелиссой.
+                Приложение для голосового управления Windows и общения с
+                настраиваемым цифровым компаньоном. Команды выполняются
+                локальным ядром, а диалог работает через защищённый AI-сервис.
               </p>
               <div class="site-hero__actions">
-                <a class="site-button site-button--primary" href="/assistant/chat">
-                  Открыть web-чат
+                <a
+                  class="site-button site-button--primary"
+                  href="/assistant/chat"
+                  data-assistant-chat-label
+                >
+                  Открыть чат с Мелиссой
                 </a>
                 <a class="site-button site-button--ghost" href="#release">
                   Узнать о доступе
@@ -73,15 +78,61 @@
           </div>
         </section>
 
+        <section class="site-section site-section--panel">
+          <div class="site-container site-system">
+            <div class="site-system__copy" data-reveal>
+              <span class="site-eyebrow">Как устроен Assistant</span>
+              <h2>Быстрые команды и разговор — два отдельных контура</h2>
+              <p>
+                Действия на компьютере не должны ждать ответа нейросети.
+                Поэтому управление Windows выполняется локально, а запросы к
+                компаньону проходят через аккаунт и серверный шлюз. Для
+                пользователя это одно приложение, но каждая часть занимается
+                своей задачей.
+              </p>
+              <ul class="site-checklist">
+                <li>«Змея» активирует команды управления компьютером.</li>
+                <li>«Мелисса» открывает режим разговора с компаньоном.</li>
+                <li>Память и настройки профиля привязаны к аккаунту.</li>
+              </ul>
+            </div>
+
+            <div class="site-system__console" data-reveal>
+              <div class="site-console__bar">
+                <span>ZIREN ASSISTANT // PIPELINE</span>
+                <span>LOCAL + CLOUD</span>
+              </div>
+              <div class="site-console__body">
+                <div class="site-console__line">
+                  <span>VOICE</span>
+                  <strong>Распознавание команды и определение режима</strong>
+                </div>
+                <div class="site-console__line">
+                  <span>LOCAL</span>
+                  <strong>Выполнение действий в Windows без ожидания AI</strong>
+                </div>
+                <div class="site-console__line">
+                  <span>DIALOG</span>
+                  <strong>Авторизованный запрос к нейросетевому сервису</strong>
+                </div>
+                <div class="site-console__line">
+                  <span>PROFILE</span>
+                  <strong>Общие данные для сайта и desktop-приложения</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="site-section" id="control">
           <div class="site-container">
             <div class="site-section__head" data-reveal>
               <span class="site-eyebrow">Текущая alpha</span>
-              <h2>Реальные функции управления</h2>
+              <h2>Что уже умеет приложение</h2>
               <p>
-                Список основан на текущем коде desktop-приложения и локального
-                Python-ядра. Доступность отдельных действий может зависеть от
-                приложения, Windows и активного медиаплеера.
+                Здесь перечислены функции, которые есть в текущей версии.
+                Некоторые действия зависят от Windows, запущенного приложения
+                и активного медиаплеера.
               </p>
             </div>
 
@@ -148,19 +199,30 @@
           <div class="site-container">
             <div class="melissa-panel" data-reveal>
               <div class="melissa-panel__copy">
-                <span class="site-eyebrow">AI companion</span>
-                <h2>Мелисса будет знать, что умеет Ziren</h2>
+                <span class="site-eyebrow">Разговорная часть Assistant</span>
+                <h2>Мелисса — имя по умолчанию, а не жёсткое ограничение</h2>
                 <p>
-                  Уже сейчас существуют persona-пресеты, история сообщений и
-                  редактируемая долговременная память. Следующий шаг — единый
-                  каталог возможностей, развитие отношений, лор и безопасный
-                  поток событий о действиях пользователя.
+                  Имя компаньона можно изменить. Уже доступны история
+                  сообщений, несколько вариантов характера и редактируемая
+                  долговременная память. Дальше мы свяжем разговор с каталогом
+                  функций Assistant и добровольно разрешёнными событиями с
+                  компьютера — без передачи полного текста голосовых команд.
                 </p>
                 <div class="melissa-panel__points">
                   <span>Память под контролем</span>
                   <span>Настраиваемый тон</span>
                   <span>Контекст по согласию</span>
                   <span>Инициативные диалоги</span>
+                  <span>Имя и история персонажа</span>
+                </div>
+                <div class="site-hero__actions">
+                  <a
+                    class="site-button site-button--ghost"
+                    href="/assistant/chat"
+                    data-assistant-chat-label
+                  >
+                    Открыть чат с Мелиссой
+                  </a>
                 </div>
               </div>
               <div class="melissa-panel__media">
@@ -214,6 +276,55 @@
           </div>
         </section>
 
+        <section class="site-section">
+          <div class="site-container">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">Следующие этапы</span>
+              <h2>Что мы дорабатываем</h2>
+              <p>
+                Приоритет — стабильность текущих функций. Новые возможности
+                будут подключаться после проверки базового сценария на обычных
+                Windows-компьютерах.
+              </p>
+            </div>
+
+            <div class="site-roadmap">
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 01</span>
+                <h3>Стабильная Windows-сборка</h3>
+                <p>
+                  Установщик, доставка голосовых моделей, диагностика,
+                  обновления и тестирование на чистой системе.
+                </p>
+              </article>
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 02</span>
+                <h3>Управление без костылей</h3>
+                <p>
+                  Новые команды, системные интеграции и отдельные адаптеры для
+                  программ, которыми люди пользуются каждый день.
+                </p>
+              </article>
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 03</span>
+                <h3>Развитие компаньона</h3>
+                <p>
+                  Память, выбранный характер, собственная история, знание
+                  функций приложения и уместная инициатива в диалоге.
+                </p>
+              </article>
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 04</span>
+                <h3>Связь с Ziren Network</h3>
+                <p>
+                  Друзья, сообщения и голосовая отправка через Assistant после
+                  запуска безопасного социального слоя.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
         <section class="site-section site-section--tight" id="release">
           <div class="site-container">
             <div class="site-cta" data-reveal>
@@ -246,7 +357,9 @@
             <div class="site-footer__column">
               <strong>Навигация</strong>
               <a href="/">Главная</a>
-              <a href="/assistant/chat">Web-чат</a>
+              <a href="/assistant/chat" data-assistant-chat-label>
+                Открыть чат с Мелиссой
+              </a>
               <a href="/profile">Профиль</a>
             </div>
             <div class="site-footer__column">

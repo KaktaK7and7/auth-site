@@ -1,227 +1,331 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ziren — разработка цифровых продуктов</title>
+    <meta
+      name="description"
+      content="Ziren разрабатывает desktop-приложения, интеллектуальные интерфейсы и сервисы, которые объединяют продукты и пользователей в одной экосистеме."
+    />
+    <link rel="canonical" href="https://www.ziren.store/" />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="preload" as="image" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
 
-  <title>Ziren — AI экосистема</title>
-  <meta name="description" content="Ziren — это платформа умных решений: ассистент, автоматизация, AI и комьюнити." />
+    <meta property="og:title" content="Ziren — разработка цифровых продуктов" />
+    <meta
+      property="og:description"
+      content="Desktop-приложения, интеллектуальные интерфейсы и собственная цифровая экосистема."
+    />
+    <meta property="og:image" content="https://www.ziren.store/images/Ziren.png" />
+    <meta property="og:url" content="https://www.ziren.store/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+  </head>
 
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" type="image/png" href="/images/Ziren.png" />
-  <link rel="canonical" href="https://www.ziren.store" />
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-container site-nav">
+          <a class="site-brand" href="/" aria-label="Ziren — главная">
+            <img src="/images/Ziren.png" alt="" />
+            <span>ZIREN <small>TECHNOLOGY &amp; PRODUCTS</small></span>
+          </a>
 
-  <!-- Open Graph (превью ссылки) -->
-  <meta property="og:title" content="Ziren — AI экосистема" />
-  <meta property="og:description" content="Ziren — это платформа умных решений: ассистент, автоматизация, AI и комьюнити." />
-  <meta property="og:image" content="https://www.ziren.store/images/preview.png" />
-  <meta property="og:url" content="https://www.ziren.store" />
-  <meta property="og:type" content="website" />
+          <button
+            class="site-nav__toggle"
+            type="button"
+            aria-label="Открыть меню"
+            aria-expanded="false"
+            data-nav-toggle
+          >
+            ☰
+          </button>
 
-  <!-- Twitter (тоже влияет на превью) -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Ziren — AI экосистема" />
-  <meta name="twitter:description" content="Ziren — это платформа умных решений: ассистент, автоматизация, AI и комьюнити." />
-  <meta name="twitter:image" content="https://www.ziren.store/images/preview.png" />
-</head>
-<body>
-  <div class="bg-glow glow-1"></div>
-  <div class="bg-glow glow-2"></div>
+          <nav class="site-nav__links" aria-label="Основная навигация" data-nav-links>
+            <a href="/" aria-current="page">Главная</a>
+            <a href="#about">О Ziren</a>
+            <a href="#directions">Направления</a>
+            <a href="#community">Сообщество</a>
+            <a href="/assistant.html">Ассистент</a>
+          </nav>
 
-  <header class="header">
-    <div class="container nav">
-      <a href="index.html" class="brand">
-        <img src="images/Ziren.png" alt="Ziren logo" class="brand-logo" />
-        <span>Ziren</span>
-      </a>
+          <div class="site-nav__actions" data-auth-container>
+            <a class="site-button site-button--ghost" href="/login.html">Войти</a>
+            <a
+              class="site-button site-button--primary site-button--compact"
+              href="/register.html"
+            >
+              Регистрация
+            </a>
+          </div>
+        </div>
+      </header>
 
-      <nav class="nav-links">
-        <a href="index.html">Главная</a>
-        <a href="assistant.html">Ассистент</a>
-        <a href="#community">Сообщество</a>
-        <a href="#feedback">Обратная связь</a>
-      </nav>
+      <main>
+        <section class="company-hero">
+          <div class="site-container company-hero__layout">
+            <div class="company-hero__copy">
+              <span class="site-status">Независимый технологический проект</span>
+              <h1>Создаём продукты, которыми <span>хочется пользоваться.</span></h1>
+              <p>
+                Ziren направлен на реализацию идей, которые не только помогают
+                решать повседневные задачи, но и привносят в вашу жизнь нечто
+                новое.
+              </p>
+              <div class="site-hero__actions">
+                <a class="site-button site-button--primary" href="/register.html">
+                  Создать аккаунт
+                </a>
+                <a class="site-button site-button--ghost" href="#about">
+                  Узнать о Ziren
+                </a>
+              </div>
+            </div>
 
-      <div class="nav-actions" data-auth-container>
-        <a class="btn btn-secondary" href="/login.html">Войти</a>
-      </div>
+            <div class="company-hero__identity" aria-label="Логотип Ziren">
+              <div class="company-hero__orbit" aria-hidden="true"></div>
+              <div class="company-hero__logo">
+                <img src="/images/Ziren.png" alt="Ziren" />
+              </div>
+              <strong>ZIREN</strong>
+              <span>SOFTWARE · INTELLIGENCE · COMMUNITY</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section" id="about">
+          <div class="site-container company-about">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">О проекте</span>
+              <h2>Одна среда для комьюнити и разработки</h2>
+            </div>
+
+            <div class="company-about__copy" data-reveal>
+              <p>
+                Ziren начался с идеи создать что-то своё. В начале у него не
+                было ни чёткой концепции, ни готового плана реализации.
+              </p>
+              <p>
+                Ziren и я — одно целое, нас нельзя разделить. Ziren — воплощение
+                моих идей и амбиций.
+              </p>
+              <p>
+                Сейчас я работаю над персональным ассистентом, который не просто
+                будет выполнять команды, но и станет частью вашей жизни. Я хочу
+                сделать его уникальным для каждого пользователя — на основе
+                истории, которую вы прошли вместе, и вашей манеры общения.
+              </p>
+              <p>
+                Я развиваю проект постепенно. Всё начиналось с простого
+                ассистента, который выполняет команды. Сейчас я создаю
+                расширяемую экосистему, где главный упор сделан на
+                индивидуальный искусственный интеллект, социальные возможности
+                для взаимодействия пользователей и открытость к новым идеям.
+              </p>
+            </div>
+
+            <div class="company-facts" data-reveal>
+              <div>
+                <strong>01</strong>
+                <span>Собственная разработка</span>
+              </div>
+              <div>
+                <strong>02</strong>
+                <span>Единый аккаунт</span>
+              </div>
+              <div>
+                <strong>03</strong>
+                <span>Развитие вместе с сообществом</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section site-section--panel" id="directions">
+          <div class="site-container">
+            <div class="site-section__head site-section__head--split" data-reveal>
+              <div>
+                <span class="site-eyebrow">Чем занимается Ziren</span>
+                <h2>Направления разработки</h2>
+              </div>
+              <p>
+                Мы работаем над технологиями, которые могут использовать одну
+                учётную запись, общий профиль и согласованные правила работы с
+                данными.
+              </p>
+            </div>
+
+            <div class="site-grid site-grid--4">
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">01 / DESKTOP</span>
+                <h3>Приложения для компьютера</h3>
+                <p>
+                  Полноценные Windows-продукты с продуманным интерфейсом,
+                  локальными функциями и понятными настройками.
+                </p>
+              </article>
+
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">02 / INTERFACES</span>
+                <h3>Интеллектуальные интерфейсы</h3>
+                <p>
+                  Голос, автоматизация и AI там, где они действительно
+                  сокращают лишние действия и помогают быстрее получить
+                  результат.
+                </p>
+              </article>
+
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">03 / IDENTITY</span>
+                <h3>Аккаунт и профиль</h3>
+                <p>
+                  Единые данные пользователя, настройки приватности,
+                  достижения и синхронизация между сайтом и приложениями.
+                </p>
+              </article>
+
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">04 / NETWORK</span>
+                <h3>Сообщество и сервисы</h3>
+                <p>
+                  Друзья, общение, пользовательский контент и площадки для
+                  авторов — по мере готовности основных продуктов.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section">
+          <div class="site-container company-principles">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">Подход к работе</span>
+              <h2>На чём держится проект</h2>
+            </div>
+
+            <div class="company-principles__list">
+              <article data-reveal>
+                <span>01</span>
+                <div>
+                  <h3>Польза важнее количества функций</h3>
+                  <p>
+                    Новая возможность имеет смысл только тогда, когда она
+                    решает конкретную задачу и работает предсказуемо.
+                  </p>
+                </div>
+              </article>
+              <article data-reveal>
+                <span>02</span>
+                <div>
+                  <h3>Данные остаются под контролем пользователя</h3>
+                  <p>
+                    Публичность профиля, участие в ленте и будущий учёт
+                    активности включаются отдельно и добровольно.
+                  </p>
+                </div>
+              </article>
+              <article data-reveal>
+                <span>03</span>
+                <div>
+                  <h3>Разработка без выдуманных обещаний</h3>
+                  <p>
+                    На страницах продуктов мы отдельно показываем готовые
+                    возможности, ограничения и то, что находится в работе.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="community-strip" id="community">
+          <div class="site-container community-strip__head">
+            <strong>Участники Ziren</strong>
+            <span data-community-status>
+              Загружаем реальные профили сообщества…
+            </span>
+          </div>
+          <div class="community-ticker__viewport">
+            <div class="community-ticker" data-community-ticker>
+              Загружаем участников…
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section site-section--tight">
+          <div class="site-container">
+            <div class="feedback-banner" data-reveal>
+              <div>
+                <span class="site-eyebrow">Обратная связь</span>
+                <h2>Есть идея для Ziren?</h2>
+                <p>
+                  Предложи новую функцию, расскажи, чего тебе не хватает, или
+                  поделись впечатлениями от проекта. Я читаю обратную связь и
+                  учитываю её при выборе следующих направлений разработки.
+                </p>
+              </div>
+              <a class="site-button site-button--ghost" href="/contacts.html">
+                Предложить идею или оставить отзыв
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section site-section--tight">
+          <div class="site-container">
+            <div class="site-cta" data-reveal>
+              <span class="site-eyebrow">Аккаунт Ziren</span>
+              <h2>Один профиль для сайта и приложений</h2>
+              <p>
+                Создай аккаунт, настрой профиль и сам выбери, какие данные будут
+                видны другим участникам. По мере выхода новых продуктов этот же
+                аккаунт будет связывать их в одной системе.
+              </p>
+              <a class="site-button site-button--primary" href="/register.html">
+                Зарегистрироваться
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="site-container">
+          <div class="site-footer__grid">
+            <div class="site-footer__brand">
+              <a class="site-brand" href="/">
+                <img src="/images/Ziren.png" alt="" />
+                <span>ZIREN</span>
+              </a>
+              <p>
+                Независимый технологический проект. Разрабатываем
+                desktop-приложения, интеллектуальные интерфейсы и собственные
+                онлайн-сервисы.
+              </p>
+            </div>
+            <div class="site-footer__column">
+              <strong>Продукты</strong>
+              <a href="/assistant.html">Ziren Assistant</a>
+              <a href="/register.html">Создать аккаунт</a>
+              <a href="/login.html">Войти</a>
+            </div>
+            <div class="site-footer__column">
+              <strong>Информация</strong>
+              <a href="/privacy.html">Конфиденциальность</a>
+              <a href="/terms.html">Условия использования</a>
+              <a href="/contacts.html">Контакты</a>
+            </div>
+          </div>
+          <div class="site-footer__bottom">
+            <span>© 2026 Ziren. Проект находится в разработке.</span>
+            <span>Версия сайта: Alpha</span>
+          </div>
+        </div>
+      </footer>
     </div>
-  </header>
 
-  <main>
-    <section class="hero container">
-      <div class="hero-text">
-        <span class="badge">AI ecosystem</span>
-        <h1>Ziren</h1>
-        <p class="hero-subtitle">
-          Технологическая экосистема нового поколения. Умные инструменты,
-          автоматизация, AI и цифровой стиль в одном пространстве.
-        </p>
-
-        <div class="hero-buttons">
-          <a class="btn btn-primary" href="assistant.html">Открыть Ziren_Assistant</a>
-          <a class="btn btn-ghost" href="#about">Узнать больше</a>
-        </div>
-      </div>
-
-      <div class="hero-card">
-        <div class="hero-card-inner">
-          <img src="images/Ziren.png" alt="Ziren" class="hero-logo" />
-          <p class="hero-card-title">Ziren Core</p>
-          <p class="hero-card-text">
-            Бренд, вокруг которого строится продукт, комьюнити и будущее ассистента.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section id="about" class="section container">
-      <div class="section-head">
-        <span class="section-kicker">О проекте</span>
-        <h2>Что такое Ziren</h2>
-        <p>
-          Ziren — это платформа и бренд, вокруг которого развивается экосистема
-          умных решений: ассистент, сообщество, подписки, пользовательский контент
-          и будущие модули.
-        </p>
-      </div>
-
-      <div class="grid-4">
-        <article class="feature-card">
-          <h3>AI ядро</h3>
-          <p>Интеграции с нейросетями и умными сценариями работы.</p>
-        </article>
-        <article class="feature-card">
-          <h3>Голос</h3>
-          <p>Голосовые команды и взаимодействие с ассистентом.</p>
-        </article>
-        <article class="feature-card">
-          <h3>Автоматизация</h3>
-          <p>Скрипты, действия, системные команды и управление.</p>
-        </article>
-        <article class="feature-card">
-          <h3>Комьюнити</h3>
-          <p>Пользователи, видео, идеи, предложения и рост проекта.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section container">
-      <div class="promo-panel">
-        <div>
-          <span class="section-kicker">Продукт</span>
-          <h2>Ziren_Assistant</h2>
-          <p>
-            Персональный AI-ассистент для компьютера: голос, команды,
-            нейросети, Telegram и автоматизация.
-          </p>
-        </div>
-        <a class="btn btn-primary" href="assistant.html">Перейти к ассистенту</a>
-      </div>
-    </section>
-
-    <section class="ticker-section">
-      <div class="ticker-label">Уже с нами</div>
-      <div class="ticker-wrap">
-        <div class="ticker-track">
-          <span>neo_user</span>
-          <span>ziren_fan</span>
-          <span>assistant_pro</span>
-          <span>cyber_vlad</span>
-          <span>night_core</span>
-          <span>voice_runner</span>
-          <span>neo_user</span>
-          <span>ziren_fan</span>
-          <span>assistant_pro</span>
-          <span>cyber_vlad</span>
-          <span>night_core</span>
-          <span>voice_runner</span>
-        </div>
-      </div>
-    </section>
-
-    <section id="community" class="section container">
-      <div class="section-head">
-        <span class="section-kicker">Сообщество</span>
-        <h2>Контент от пользователей</h2>
-        <p>
-          Здесь позже можно выводить TikTok-видео, клипы, обзоры и демонстрации,
-          связанные с ассистентом.
-        </p>
-      </div>
-
-      <div class="video-grid">
-        <div class="video-card">
-          <div class="video-screen">Видео 1</div>
-          <p>Демо от пользователя</p>
-        </div>
-        <div class="video-card">
-          <div class="video-screen">Видео 2</div>
-          <p>Использование ассистента</p>
-        </div>
-        <div class="video-card">
-          <div class="video-screen">Видео 3</div>
-          <p>Обзор функций</p>
-        </div>
-      </div>
-    </section>
-
-
-
-    <section class="section container">
-      <div class="section-head">
-        <span class="section-kicker">Отзывы</span>
-        <h2>Что говорят пользователи</h2>
-      </div>
-
-      <div class="reviews-grid">
-        <article class="review-card">
-          <p>«Очень стильный и реально полезный ассистент. Видно потенциал.»</p>
-          <span>— user_014</span>
-        </article>
-        <article class="review-card">
-          <p>«Управление голосом и Telegram — это вообще разнос.»</p>
-          <span>— cyberfox</span>
-        </article>
-        <article class="review-card">
-          <p>«Хочу видеть, как проект растёт. Атмосфера кайф.»</p>
-          <span>— nightbyte</span>
-        </article>
-      </div>
-    </section>
-
-    <section id="feedback" class="section container">
-      <div class="feedback-panel">
-        <div>
-          <span class="section-kicker">Обратная связь</span>
-          <h2>Есть идея, баг или предложение?</h2>
-          <p>
-            Позже здесь можно подключить форму отправки багов, предложений,
-            отзывов и реферальную систему.
-          </p>
-        </div>
-        <a class="btn btn-secondary" href="register.html">Присоединиться</a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-  <div class="container footer-inner">
-
-    <div>
-      <strong>Ziren</strong>
-      <p>Технологическая экосистема и AI-продукты нового поколения.</p>
-    </div>
-
-    <div class="footer-links">
-      <a href="/privacy.html">Политика</a>
-      <a href="/terms.html">Соглашение</a>
-      <a href="/contacts.html">Контакты</a>
-    </div>
-
-  </div>
-</footer>
-
-  <script src="script.js"></script>
-</body>
+    <script src="/site.js" defer></script>
+  </body>
 </html>

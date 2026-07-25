@@ -1,182 +1,387 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ziren_Assistant</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="bg-glow glow-1"></div>
-  <div class="bg-glow glow-2"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ziren Assistant — голосовое управление и Мелисса</title>
+    <meta
+      name="description"
+      content="Актуальные возможности Ziren Assistant: голосовое управление Windows, запуск приложений, работа с окнами и звуком, AI-компаньон Мелисса и память."
+    />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
+  </head>
 
-  <header class="header">
-    <div class="container nav">
-      <a href="index.html" class="brand">
-        <img src="images/Ziren.png" alt="Ziren logo" class="brand-logo" />
-        <span>Ziren</span>
-      </a>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-container site-nav">
+          <a class="site-brand" href="/">
+            <img src="/images/Ziren.png" alt="" />
+            <span>ZIREN <small>ASSISTANT</small></span>
+          </a>
+          <button
+            class="site-nav__toggle"
+            type="button"
+            aria-label="Открыть меню"
+            aria-expanded="false"
+            data-nav-toggle
+          >
+            ☰
+          </button>
+          <nav class="site-nav__links" data-nav-links>
+            <a href="/">Главная</a>
+            <a href="/assistant.html" aria-current="page">Ассистент</a>
+            <a href="#control">Управление</a>
+            <a href="#companion">Мелисса</a>
+            <a href="#release">Доступ</a>
+          </nav>
+          <div class="site-nav__actions" data-auth-container>
+            <a class="site-button site-button--ghost" href="/login.html">Войти</a>
+            <a
+              class="site-button site-button--primary site-button--compact"
+              href="/register.html"
+            >
+              Регистрация
+            </a>
+          </div>
+        </div>
+      </header>
 
-      <nav class="nav-links">
-        <a href="/">Главная</a>
-        <a href="/assistant" class="active-link">Ассистент</a>
-        <a href="/login.html">Войти</a>
-        <a href="/register.html">Регистрация</a>
-      </nav>
+      <main>
+        <section class="site-hero">
+          <div class="site-hero__media" aria-hidden="true">
+            <img src="/images/melissa-hero.webp" alt="" />
+          </div>
+          <div class="site-container site-hero__content">
+            <div>
+              <span class="site-status">Активная разработка</span>
+              <h1>Ziren <span>Assistant</span></h1>
+              <p class="site-hero__lead">
+                Приложение для голосового управления Windows и общения с
+                настраиваемым цифровым компаньоном. Команды выполняются
+                локальным ядром, а диалог работает через защищённый AI-сервис.
+              </p>
+              <div class="site-hero__actions">
+                <a
+                  class="site-button site-button--primary"
+                  href="/assistant/chat"
+                  data-assistant-chat-label
+                >
+                  Открыть чат с Мелиссой
+                </a>
+                <a class="site-button site-button--ghost" href="#release">
+                  Узнать о доступе
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div class="nav-actions" data-auth-container>
-        <a class="btn btn-secondary" href="/login.html">Войти</a>
-      </div>
+        <section class="site-section site-section--panel">
+          <div class="site-container assistant-logic">
+            <div class="assistant-logic__intro" data-reveal>
+              <span class="site-eyebrow">Как устроен Assistant</span>
+              <h2>Команды и общение — разная логика</h2>
+              <p>
+                Команды подразумевают чёткое выполнение поставленной задачи, а
+                нейронный модуль позволяет взаимодействовать со свободной
+                структурой Ziren: просто общаться или узнавать что-то новое.
+                Для пользователя это одно приложение, но каждая часть
+                занимается своей задачей.
+              </p>
+            </div>
+
+            <div class="assistant-logic__modes">
+              <article data-reveal>
+                <div class="assistant-logic__mode-head">
+                  <span>01 / COMMANDS</span>
+                  <strong>Локальный контур</strong>
+                </div>
+                <h3>«Змея» активирует команды управления компьютером</h3>
+                <p>
+                  Команда распознаётся, сопоставляется с нужной функцией и
+                  выполняется без ожидания ответа нейросети.
+                </p>
+              </article>
+
+              <article data-reveal>
+                <div class="assistant-logic__mode-head">
+                  <span>02 / DIALOG</span>
+                  <strong>Нейронный модуль</strong>
+                </div>
+                <h3>«Мелисса» открывает режим общения с компаньоном</h3>
+                <p>
+                  В этом режиме нет жёсткой структуры команды: можно продолжить
+                  разговор, задать вопрос или узнать что-то новое.
+                </p>
+              </article>
+            </div>
+
+            <div class="assistant-logic__account" data-reveal>
+              <span>PROFILE / MEMORY</span>
+              <strong>Память и настройки профиля привязаны к аккаунту</strong>
+              <p>
+                Выбранное имя, характер и сохранённая информация доступны в
+                web-чате и приложении после авторизации.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section" id="control">
+          <div class="site-container">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">Текущая alpha</span>
+              <h2>Что уже умеет приложение</h2>
+              <p>
+                Здесь перечислены функции, которые есть в текущей версии.
+                Некоторые действия зависят от Windows, запущенного приложения
+                и активного медиаплеера.
+              </p>
+            </div>
+
+            <div class="site-grid site-grid--3">
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">APPS / GAMES</span>
+                <span class="site-card__tag">Готово</span>
+                <h3>Запуск приложений</h3>
+                <p>
+                  Поиск программ, ярлыков и Steam-игр, голосовые алиасы,
+                  нечёткое сопоставление и уточнение при нескольких вариантах.
+                </p>
+              </article>
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">WINDOWS</span>
+                <span class="site-card__tag">Готово</span>
+                <h3>Управление окнами</h3>
+                <p>
+                  Закрытие, сворачивание, разворачивание, восстановление,
+                  переключение на окно и показ рабочего стола.
+                </p>
+              </article>
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">AUDIO</span>
+                <span class="site-card__tag">Готово</span>
+                <h3>Громкость</h3>
+                <p>
+                  Увеличение и уменьшение громкости, mute, возврат звука и
+                  установка уровня от 0 до 100.
+                </p>
+              </article>
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">MEDIA</span>
+                <span class="site-card__tag">Базово</span>
+                <h3>Музыка и медиа</h3>
+                <p>
+                  Play/pause, следующий и предыдущий трек, stop и открытие
+                  сохранённых ссылок. Точное управление плеерами ещё дорабатывается.
+                </p>
+              </article>
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">VOICE</span>
+                <span class="site-card__tag">Готово</span>
+                <h3>Два wake-word</h3>
+                <p>
+                  «Змея» активирует команды компьютера, «Мелисса» начинает
+                  разговор с нейросетью. Режимы остаются частью одного интерфейса.
+                </p>
+              </article>
+              <article class="site-card" data-reveal>
+                <span class="site-card__index">SETTINGS</span>
+                <span class="site-card__tag">Готово</span>
+                <h3>Настройка под себя</h3>
+                <p>
+                  Приложения, алиасы, произношение, голосовые триггеры и
+                  музыкальные сценарии редактируются через GUI.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section site-section--panel" id="companion">
+          <div class="site-container">
+            <div class="melissa-panel" data-reveal>
+              <div class="melissa-panel__copy">
+                <span class="site-eyebrow">Разговорная часть Assistant</span>
+                <h2>Мелисса — имя по умолчанию, а не жёсткое ограничение</h2>
+                <p>
+                  Имя компаньона можно изменить. Уже доступны история
+                  сообщений, несколько вариантов характера и редактируемая
+                  долговременная память. Дальше мы свяжем разговор с каталогом
+                  функций Assistant и добровольно разрешёнными событиями с
+                  компьютера — без передачи полного текста голосовых команд.
+                </p>
+                <div class="melissa-panel__points">
+                  <span>Память под контролем</span>
+                  <span>Настраиваемый тон</span>
+                  <span>Контекст по согласию</span>
+                  <span>Инициативные диалоги</span>
+                  <span>Имя и история персонажа</span>
+                </div>
+                <div class="site-hero__actions">
+                  <a
+                    class="site-button site-button--ghost"
+                    href="/assistant/chat"
+                    data-assistant-chat-label
+                  >
+                    Открыть чат с Мелиссой
+                  </a>
+                </div>
+              </div>
+              <div class="melissa-panel__media">
+                <img
+                  src="/images/melissa-full.webp"
+                  alt="Мелисса в цифровом пространстве Ziren"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section">
+          <div class="site-container site-system">
+            <div class="site-system__copy" data-reveal>
+              <span class="site-eyebrow">Честно о музыке</span>
+              <h2>Сейчас работает, но это ещё переходная версия</h2>
+              <p>
+                Ссылка на музыку открывается в браузере, после чего пользователь
+                сам запускает воспроизведение. Далее Ziren использует глобальные
+                медиаклавиши Windows. Поэтому ассистент пока не всегда понимает,
+                какой именно плеер получил команду.
+              </p>
+              <ul class="site-checklist">
+                <li>Текущий функционал не выдаётся за полноценную интеграцию.</li>
+                <li>Следующий слой — Windows Media Sessions и выбор плеера.</li>
+                <li>Позже появятся адаптеры конкретных музыкальных сервисов.</li>
+              </ul>
+            </div>
+            <div class="site-system__console" data-reveal>
+              <div class="site-console__bar">
+                <span>MEDIA // MIGRATION PLAN</span>
+                <span>IN PROGRESS</span>
+              </div>
+              <div class="site-console__body">
+                <div class="site-console__line">
+                  <span>NOW</span>
+                  <strong>Ссылка + ручной Play + глобальные media keys</strong>
+                </div>
+                <div class="site-console__line">
+                  <span>NEXT</span>
+                  <strong>Активная Windows media session и metadata</strong>
+                </div>
+                <div class="site-console__line">
+                  <span>LATER</span>
+                  <strong>Поиск, очередь и официальные provider adapters</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section">
+          <div class="site-container">
+            <div class="site-section__head" data-reveal>
+              <span class="site-eyebrow">Следующие этапы</span>
+              <h2>Что мы дорабатываем</h2>
+              <p>
+                Приоритет — стабильность текущих функций. Новые возможности
+                будут подключаться после проверки базового сценария на обычных
+                Windows-компьютерах.
+              </p>
+            </div>
+
+            <div class="site-roadmap">
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 01</span>
+                <h3>Стабильная Windows-сборка</h3>
+                <p>
+                  Установщик, доставка голосовых моделей, диагностика,
+                  обновления и тестирование на чистой системе.
+                </p>
+              </article>
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 02</span>
+                <h3>Управление без костылей</h3>
+                <p>
+                  Новые команды, системные интеграции и отдельные адаптеры для
+                  программ, которыми люди пользуются каждый день.
+                </p>
+              </article>
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 03</span>
+                <h3>Развитие компаньона</h3>
+                <p>
+                  Память, выбранный характер, собственная история, знание
+                  функций приложения и уместная инициатива в диалоге.
+                </p>
+              </article>
+              <article class="site-roadmap__item" data-reveal>
+                <span>ЭТАП 04</span>
+                <h3>Связь с Ziren Network</h3>
+                <p>
+                  Друзья, сообщения и голосовая отправка через Assistant после
+                  запуска безопасного социального слоя.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section site-section--tight" id="release">
+          <div class="site-container">
+            <div class="site-cta" data-reveal>
+              <span class="site-eyebrow">Доступ к приложению</span>
+              <h2>Публичный установщик ещё не выпущен</h2>
+              <p>
+                Мы готовим безопасную Windows-сборку, доставку голосовых моделей,
+                автообновление и тест установки на чистой системе. На сайте нет
+                фальшивой кнопки скачивания: пока можно создать аккаунт и
+                следить за развитием продукта.
+              </p>
+              <a class="site-button site-button--primary" href="/register.html">
+                Создать аккаунт Ziren
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="site-container">
+          <div class="site-footer__grid">
+            <div class="site-footer__brand">
+              <a class="site-brand" href="/">
+                <img src="/images/Ziren.png" alt="" />
+                <span>ZIREN</span>
+              </a>
+              <p>Голосовое управление и AI-компаньон для Windows.</p>
+            </div>
+            <div class="site-footer__column">
+              <strong>Навигация</strong>
+              <a href="/">Главная</a>
+              <a href="/assistant/chat" data-assistant-chat-label>
+                Открыть чат с Мелиссой
+              </a>
+              <a href="/profile">Профиль</a>
+            </div>
+            <div class="site-footer__column">
+              <strong>Информация</strong>
+              <a href="/privacy.html">Конфиденциальность</a>
+              <a href="/terms.html">Условия</a>
+              <a href="/contacts.html">Контакты</a>
+            </div>
+          </div>
+          <div class="site-footer__bottom">
+            <span>© 2026 Ziren</span>
+            <span>Windows Alpha</span>
+          </div>
+        </div>
+      </footer>
     </div>
-  </header>
 
-  <main>
-    <section class="hero container hero-assistant">
-      <div class="hero-text">
-        <span class="badge">Product page</span>
-        <h1>Ziren_Assistant</h1>
-        <p class="hero-subtitle">
-          Персональный AI-ассистент для компьютера с голосом, автоматизацией,
-          Telegram, памятью и расширяемой системой команд.
-        </p>
-
-        <div class="hero-buttons">
-          <a class="btn btn-primary" id="assistant-open-btn" href="/assistant/chat">Открыть Мелисса</a>
-          <a class="btn btn-ghost" href="#pricing">Тарифы</a>
-          <a class="btn btn-secondary" href="#download">Скачать</a>
-        </div>
-      </div>
-
-      <div class="assistant-panel">
-        <div class="assistant-avatar-ring">
-          <img src="images/Ziren.png" alt="Ziren Assistant" class="assistant-avatar" />
-        </div>
-      </div>
-    </section>
-
-    <section class="section container">
-      <div class="section-head">
-        <span class="section-kicker">Возможности</span>
-        <h2>Что умеет ассистент</h2>
-      </div>
-
-      <div class="grid-4">
-        <article class="feature-card">
-          <h3>Голосовые команды</h3>
-          <p>Управление компьютером голосом и запуск сценариев.</p>
-        </article>
-        <article class="feature-card">
-          <h3>AI-ответы</h3>
-          <p>Интеграция с нейросетями для ответов и инициативного общения.</p>
-        </article>
-        <article class="feature-card">
-          <h3>Telegram</h3>
-          <p>Подключение бота и удалённое взаимодействие.</p>
-        </article>
-        <article class="feature-card">
-          <h3>Автоматизация</h3>
-          <p>Управление приложениями, звуком, браузером и действиями системы.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="pricing" class="section container">
-      <div class="section-head">
-        <span class="section-kicker">Подписки</span>
-        <h2>Тарифы</h2>
-      </div>
-
-      <div class="pricing-grid">
-        <article class="price-card">
-          <span class="price-badge">Start</span>
-          <h3>Free</h3>
-          <div class="price">$0</div>
-          <ul>
-            <li>Базовый доступ</li>
-            <li>Стартовые функции</li>
-            <li>Знакомство с продуктом</li>
-          </ul>
-          <a class="btn btn-secondary" href="register.html">Начать</a>
-        </article>
-
-        <article class="price-card featured">
-          <span class="price-badge">Popular</span>
-          <h3>Pro</h3>
-          <div class="price">$5</div>
-          <ul>
-            <li>Больше возможностей</li>
-            <li>Расширенные функции</li>
-            <li>Приоритетные обновления</li>
-          </ul>
-          <a class="btn btn-primary" href="register.html">Выбрать Pro</a>
-        </article>
-
-        <article class="price-card">
-          <span class="price-badge">Advanced</span>
-          <h3>Ultra</h3>
-          <div class="price">$15</div>
-          <ul>
-            <li>Максимальный доступ</li>
-            <li>Будущие premium-функции</li>
-            <li>Максимум возможностей</li>
-          </ul>
-          <a class="btn btn-secondary" href="register.html">Выбрать Ultra</a>
-        </article>
-      </div>
-    </section>
-
-    <section id="download" class="section container">
-      <div class="download-panel">
-        <div>
-          <span class="section-kicker">Загрузка</span>
-          <h2>Скачать Ziren_Assistant</h2>
-          <p>
-            Здесь позже подключим реальную кнопку скачивания `.exe`,
-            версию приложения, changelog и системные требования.
-          </p>
-        </div>
-        <a class="btn btn-primary" 
-           href="https://github.com/KaktaK7and7/auth-site/releases/download/v0.0.1-test/ziren-test.jpg">
-           Скачать тестовый файл
-        </a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer-inner">
-      <div>
-        <strong>Ziren_Assistant</strong>
-        <p>AI-ассистент как часть экосистемы Ziren.</p>
-      </div>
-      <div class="footer-links">
-        <a href="index.html">Главная</a>
-        <a href="assistant.html">Ассистент</a>
-        <a href="login.html">Войти</a>
-        <a href="register.html">Регистрация</a>
-      </div>
-    </div>
-  </footer>
-
-  <script>
-    (async function loadAssistantOpenButton() {
-      const button = document.getElementById("assistant-open-btn");
-      if (!button) return;
-
-      try {
-        const response = await fetch("/api/assistant/persona");
-        if (!response.ok) return;
-
-        const persona = await response.json();
-        const name = String(persona.name || "").trim();
-        if (name) {
-          button.textContent = `Открыть ${name}`;
-        }
-      } catch (error) {
-        console.error("assistant persona load error:", error);
-      }
-    })();
-  </script>
-  <script src="script.js"></script>
-</body>
+    <script src="/site.js" defer></script>
+  </body>
 </html>

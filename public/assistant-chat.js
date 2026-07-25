@@ -27,11 +27,16 @@ function add(role, text) {
   el.className = "msg " + role;
 
   const time = new Date().toLocaleTimeString();
+  const textEl = document.createElement("div");
+  const timeEl = document.createElement("div");
 
-  el.innerHTML = `
-    <div>${text}</div>
-    <div style="font-size:10px;opacity:0.5;margin-top:4px">${time}</div>
-  `;
+  textEl.textContent = String(text ?? "");
+  timeEl.textContent = time;
+  timeEl.style.fontSize = "10px";
+  timeEl.style.opacity = "0.5";
+  timeEl.style.marginTop = "4px";
+
+  el.append(textEl, timeEl);
 
   messages.appendChild(el);
   messages.scrollTop = messages.scrollHeight;
@@ -210,7 +215,7 @@ async function saveAssistantName() {
     nameEl.textContent = savedName;
     nameInput.value = savedName;
     await loadPersona();
-    add("assistant", `Теперь меня зовут ${escapeHtml(savedName)}`);
+    add("assistant", `Теперь меня зовут ${savedName}`);
   } finally {
     saveNameBtn.disabled = false;
   }

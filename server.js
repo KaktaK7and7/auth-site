@@ -18,6 +18,14 @@ const {
   buildUserPayload,
 } = require("./lib/profile");
 const { renderProfilePage } = require("./lib/profile-page");
+const {
+  applyStoryChoice,
+  buildPublicStoryState,
+  buildStoryContext,
+  createInitialStoryState,
+  normalizeCompanionName,
+  normalizeStoryState,
+} = require("./lib/melissa-story");
 require("dotenv").config();
 const app = express();
 
@@ -321,6 +329,32 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_user_activity_events_user_occurred
     ON user_activity_events(user_id, occurred_at DESC);
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS melissa_story_states (
+      user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state JSONB NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS melissa_story_events (
+      id BIGSERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      choice_id VARCHAR(64) NOT NULL,
+      option_id VARCHAR(64) NOT NULL,
+      event_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, choice_id)
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_melissa_story_events_user_created
+    ON melissa_story_events(user_id, created_at DESC);
+  `);
 }
 
 function requireAuth(req, res, next) {
@@ -468,6 +502,117 @@ async function getTopCommands(userId) {
   );
 
   return result.rows;
+}
+
+async function ensureMelissaStoryState(userId, queryable = pool) {
+  const initialState = createInitialStoryState();
+
+  await queryable.query(
+    `
+    INSERT INTO melissa_story_states (user_id, state)
+    VALUES ($1, $2::jsonb)
+    ON CONFLICT (user_id) DO NOTHING
+    `,
+    [userId, JSON.stringify(initialState)],
+  );
+
+  const result = await queryable.query(
+    `
+    SELECT state
+    FROM melissa_story_states
+    WHERE user_id = $1
+    LIMIT 1
+    `,
+    [userId],
+  );
+
+  return normalizeStoryState(result.rows[0]?.state || initialState);
+}
+
+async function recordMelissaStoryChoice(
+  userId,
+  choiceId,
+  optionId,
+  customName,
+) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await ensureMelissaStoryState(userId, client);
+
+    const lockedResult = await client.query(
+      `
+      SELECT state
+      FROM melissa_story_states
+      WHERE user_id = $1
+      FOR UPDATE
+      `,
+      [userId],
+    );
+    const currentState = normalizeStoryState(lockedResult.rows[0]?.state);
+    const transition = applyStoryChoice(
+      currentState,
+      choiceId,
+      optionId,
+      customName,
+    );
+
+    await client.query(
+      `
+      UPDATE melissa_story_states
+      SET state = $2::jsonb, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1
+      `,
+      [userId, JSON.stringify(transition.state)],
+    );
+
+    await client.query(
+      `
+      INSERT INTO melissa_story_events (
+        user_id,
+        choice_id,
+        option_id,
+        event_data
+      )
+      VALUES ($1, $2, $3, $4::jsonb)
+      `,
+      [
+        userId,
+        transition.event.choice_id,
+        transition.event.option_id,
+        JSON.stringify(transition.event),
+      ],
+    );
+
+    await client.query("COMMIT");
+    return transition.state;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function updateMelissaStoryCompanionName(userId, name) {
+  const state = await ensureMelissaStoryState(userId);
+  const updatedState = {
+    ...state,
+    companion_name: normalizeCompanionName(name),
+    updated_at: new Date().toISOString(),
+  };
+
+  await pool.query(
+    `
+    UPDATE melissa_story_states
+    SET state = $2::jsonb, updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = $1
+    `,
+    [userId, JSON.stringify(updatedState)],
+  );
+
+  return updatedState;
 }
 
 
@@ -632,20 +777,100 @@ app.get("/api/assistant/me", requireAssistantAuth, (req, res) => {
 
 app.post("/api/assistant/name", requireAssistantAuth, async (req, res) => {
   try {
+    const normalizedName = normalizeCompanionName(req.body.name);
     const response = await assistantFetch(
       `/persona/${req.assistantUser.id}/name`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: req.body.name }),
+        body: JSON.stringify({ name: normalizedName }),
       },
     );
     const data = await readAssistantResponse(response);
+
+    if (response.ok) {
+      await updateMelissaStoryCompanionName(
+        req.assistantUser.id,
+        normalizedName,
+      );
+    }
+
     return res.status(response.status).json(data);
   } catch (error) {
+    if (/Имя должно/i.test(String(error.message || ""))) {
+      return res.status(400).json({ error: error.message });
+    }
+
     return sendAssistantError(res, error, "assistant/name error");
   }
 });
+
+app.get("/api/assistant/story", requireAssistantAuth, async (req, res) => {
+  try {
+    const state = await ensureMelissaStoryState(req.assistantUser.id);
+
+    res.set("Cache-Control", "no-store");
+    return res.json({
+      ok: true,
+      story: buildPublicStoryState(state),
+    });
+  } catch (error) {
+    console.error("assistant/story error:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Не удалось загрузить Хронику связи",
+    });
+  }
+});
+
+app.post(
+  "/api/assistant/story/choices",
+  requireAssistantAuth,
+  async (req, res) => {
+    try {
+      const choiceId = String(req.body?.choice_id || "").trim();
+      const optionId = String(req.body?.option_id || "").trim();
+      const customName = String(req.body?.custom_name || "").trim();
+
+      if (!choiceId || !optionId) {
+        return res.status(400).json({
+          ok: false,
+          error: "Не выбран вариант продолжения",
+        });
+      }
+
+      const state = await recordMelissaStoryChoice(
+        req.assistantUser.id,
+        choiceId,
+        optionId,
+        customName,
+      );
+
+      return res.status(201).json({
+        ok: true,
+        story: buildPublicStoryState(state),
+      });
+    } catch (error) {
+      if (
+        error.code === "23505"
+        || /уже сделан|сейчас недоступен|неизвестн|имя должно/i.test(
+          String(error.message || ""),
+        )
+      ) {
+        return res.status(409).json({
+          ok: false,
+          error: error.message,
+        });
+      }
+
+      console.error("assistant/story choice error:", error);
+      return res.status(500).json({
+        ok: false,
+        error: "Не удалось сохранить сюжетный выбор",
+      });
+    }
+  },
+);
 
 
 app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
@@ -665,6 +890,7 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid session_id" });
     }
 
+    const storyState = await ensureMelissaStoryState(req.assistantUser.id);
     const response = await assistantFetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -672,6 +898,7 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
         user_id: req.assistantUser.id,
         message: normalizedMessage,
         session_id,
+        story_context: buildStoryContext(storyState),
       }),
     });
     const data = await readAssistantResponse(response);
@@ -684,8 +911,20 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
 
 app.get("/api/assistant/persona", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await assistantFetch(`/persona/${req.assistantUser.id}`);
+    const [response, storyState] = await Promise.all([
+      assistantFetch(`/persona/${req.assistantUser.id}`),
+      ensureMelissaStoryState(req.assistantUser.id),
+    ]);
     const data = await readAssistantResponse(response);
+
+    if (
+      response.ok
+      && data
+      && storyState.choices?.temporary_name
+    ) {
+      data.name = storyState.companion_name;
+    }
+
     return res.status(response.status).json(data);
   } catch (error) {
     return sendAssistantError(res, error, "assistant/persona error");

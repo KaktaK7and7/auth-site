@@ -66,6 +66,17 @@ The `ai_context_enabled` preference only marks whether stored safe events may be
 used in a future Melissa context bridge. This service does not send those
 events to the AI service yet.
 
+## Melissa story endpoints
+
+- `GET /api/assistant/story` returns the authenticated user's current season,
+  prologue step, relationship state and spoiler-safe Chronicle nodes.
+- `POST /api/assistant/story/choices` records the next available prologue
+  choice. Choices are ordered and cannot be silently overwritten.
+- Story state is stored in `melissa_story_states`; the append-only choice log is
+  stored in `melissa_story_events`.
+- The assistant gateway builds a compact story context and sends it to the AI
+  service with chat requests. The full story bible is never sent per message.
+
 ## Local checks
 
 ```bash

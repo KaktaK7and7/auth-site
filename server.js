@@ -18,6 +18,7 @@ const {
   buildUserPayload,
 } = require("./lib/profile");
 const { renderProfilePage } = require("./lib/profile-page");
+const { sendApiNotFound } = require("./lib/api-response");
 const {
   applyStoryChoice,
   buildPublicStoryState,
@@ -1655,6 +1656,8 @@ app.post("/logout", requireAuth, requireCsrf, (req, res) => {
     res.redirect("/");
   });
 });
+
+app.use("/api", sendApiNotFound);
 
 initDb()
   .then(() => {

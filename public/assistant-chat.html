@@ -56,15 +56,22 @@
       <button id="save-name-btn">Сохранить</button>
     </div>
 
-    <h3>Характер</h3>
+    <h3>Живая история</h3>
 
-    <div class="presets">
-      <button data="cute">Милая</button>
-      <button data="calm">Спокойная</button>
-      <button data="spicy">Пошлая</button>
-      <button data="friend">Подруга</button>
-      <button data="shy_love">Тайно влюблена</button>
-      <button data="aggressive">Агрессивная</button>
+    <div class="story-mode-card">
+      <div class="story-mode-card__status">
+        <span></span>
+        <strong id="story-mode-label">Активна</strong>
+      </div>
+      <p>
+        Характер не выбирается пресетом. Он меняется через ваши решения,
+        доверие, близость и границы.
+      </p>
+      <div class="story-mode-card__path">
+        <small>ТЕКУЩИЙ ПУТЬ</small>
+        <strong id="story-path-label">Загрузка...</strong>
+      </div>
+      <button id="story-open-btn" type="button">Открыть Хронику связи</button>
     </div>
 
     <h3>Память</h3>
@@ -75,6 +82,50 @@
 
 </div>
 
+</div>
+
+<div class="story-modal" id="story-modal" hidden>
+  <div class="story-modal__backdrop" data-story-close></div>
+  <div class="story-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="story-modal-title">
+    <header class="story-modal__header">
+      <div>
+        <span>ZIREN // LIVING STORY</span>
+        <h2 id="story-modal-title">Хроника связи</h2>
+      </div>
+      <button class="story-modal__close" type="button" id="story-modal-close" aria-label="Закрыть">×</button>
+    </header>
+
+    <div class="story-modal__summary">
+      <div>
+        <small>РЕЖИМ</small>
+        <strong id="story-summary-mode">Живая история</strong>
+      </div>
+      <div>
+        <small>МАРШРУТ</small>
+        <strong id="story-summary-path">Не определён</strong>
+      </div>
+      <div>
+        <small>СВЯЗЬ</small>
+        <strong id="story-summary-link">Формируется</strong>
+      </div>
+    </div>
+
+    <div class="story-web-shell">
+      <div class="story-web-toolbar">
+        <span>Карта перемещается прокруткой. Скрытые узлы не раскрывают будущие события.</span>
+        <button id="story-focus-btn" type="button">К текущему узлу</button>
+      </div>
+      <div class="story-web-viewport" id="story-web-viewport">
+        <div class="story-web" id="story-web"></div>
+      </div>
+    </div>
+
+    <aside class="story-node-inspector" id="story-node-inspector">
+      <span>ВЫБЕРИ УЗЕЛ</span>
+      <strong>Ваша история не обязана идти по одной линии</strong>
+      <p>Каждая крупная развилка меняет следующий разговор и состояние связи.</p>
+    </aside>
+  </div>
 </div>
 
 <div class="memory-modal" id="memory-modal" hidden>

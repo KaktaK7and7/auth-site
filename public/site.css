@@ -1141,8 +1141,8 @@ a {
 
 .chronicle-flow {
   position: relative;
-  width: 820px;
-  height: 360px;
+  width: 1510px;
+  height: 720px;
 }
 
 .chronicle-flow svg {
@@ -1160,10 +1160,12 @@ a {
 
 .chronicle-flow__node {
   position: absolute;
+  left: var(--x, 0);
+  top: var(--y, 0);
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
   gap: 8px;
-  width: 142px;
+  width: 164px;
   min-height: 74px;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);

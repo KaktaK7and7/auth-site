@@ -30,7 +30,8 @@ test("assistant page owns Melissa details and personalized chat entry points", (
   const assistant = readPublicFile("assistant.html");
 
   assert.match(assistant, /id="companion"/);
-  assert.match(assistant, /Мелисса — имя по умолчанию/);
+  assert.match(assistant, /Характер не выбирается кнопкой/);
+  assert.match(assistant, /Живой сюжет включён по умолчанию/);
   assert.match(assistant, /Команды и общение — разная логика/);
   assert.match(assistant, /class="assistant-logic__modes"/);
   assert.match(assistant, /data-assistant-chat-label/);
@@ -38,7 +39,8 @@ test("assistant page owns Melissa details and personalized chat entry points", (
   assert.match(assistant, /id="chronicle"/);
   assert.match(assistant, /Хроника связи/);
   assert.match(assistant, /2045 года/);
-  assert.match(assistant, /романтическая ветка требует отдельного согласия/);
+  assert.match(assistant, /Ветки не[\s\S]*сходятся обратно/);
+  assert.match(assistant, /Доверие, близость, самостоятельность/);
 });
 
 

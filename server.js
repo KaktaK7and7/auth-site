@@ -982,6 +982,7 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
         preceding_assistant_lines: preceding_assistant_lines.map(
           (line) => line.trim(),
         ),
+        story_mode_enabled: storyState.story_mode_enabled,
         story_context: buildStoryContext(storyState),
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
@@ -1054,6 +1055,7 @@ app.post("/api/assistant/reaction", requireAssistantAuth, async (req, res) => {
         subject_label: subjectLabel,
         result_text: resultText,
         session_id: sessionId,
+        story_mode_enabled: storyState.story_mode_enabled,
         story_context: buildStoryContext(storyState),
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
@@ -1095,6 +1097,7 @@ app.post("/api/assistant/proactive", requireAssistantAuth, async (req, res) => {
         user_id: req.assistantUser.id,
         idle_minutes: Math.round(idleMinutes),
         session_id: sessionId,
+        story_mode_enabled: storyState.story_mode_enabled,
         story_context: buildStoryContext(storyState),
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
@@ -1116,12 +1119,11 @@ app.get("/api/assistant/persona", requireAssistantAuth, async (req, res) => {
     ]);
     const data = await readAssistantResponse(response);
 
-    if (
-      response.ok
-      && data
-      && storyState.choices?.temporary_name
-    ) {
+    if (response.ok && data) {
       data.name = storyState.companion_name;
+      data.preset_name = "living_story";
+      data.identity = "Живая история · характер развивается в общении";
+      data.story_mode = buildPublicStoryState(storyState).story_mode;
     }
 
     return res.status(response.status).json(data);
@@ -1133,16 +1135,15 @@ app.get("/api/assistant/persona", requireAssistantAuth, async (req, res) => {
 
 app.post("/api/assistant/preset", requireAssistantAuth, async (req, res) => {
   try {
-    const response = await assistantFetch(
-      `/persona/${req.assistantUser.id}/preset`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preset_name: req.body.preset_name }),
-      },
-    );
-    const data = await readAssistantResponse(response);
-    return res.status(response.status).json(data);
+    const storyState = await ensureMelissaStoryState(req.assistantUser.id);
+    const publicStory = buildPublicStoryState(storyState);
+
+    return res.status(409).json({
+      ok: false,
+      error:
+        "В живой истории характер Мелиссы меняется через ваши отношения, а не через пресет.",
+      story_mode: publicStory.story_mode,
+    });
   } catch (error) {
     return sendAssistantError(res, error, "assistant/preset error");
   }

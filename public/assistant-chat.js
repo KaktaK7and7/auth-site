@@ -1,6 +1,7 @@
 let session_id = 0;
 let typingEl = null;
 let user_id = null;
+let currentStory = null;
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
@@ -14,6 +15,18 @@ const memoryToggle = document.getElementById("memory-toggle");
 const memoryModal = document.getElementById("memory-modal");
 const memoryModalClose = document.getElementById("memory-modal-close");
 const memoryClearBtn = document.getElementById("memory-clear-btn");
+const storyOpenBtn = document.getElementById("story-open-btn");
+const storyModal = document.getElementById("story-modal");
+const storyModalClose = document.getElementById("story-modal-close");
+const storyModeLabel = document.getElementById("story-mode-label");
+const storyPathLabel = document.getElementById("story-path-label");
+const storySummaryMode = document.getElementById("story-summary-mode");
+const storySummaryPath = document.getElementById("story-summary-path");
+const storySummaryLink = document.getElementById("story-summary-link");
+const storyWeb = document.getElementById("story-web");
+const storyWebViewport = document.getElementById("story-web-viewport");
+const storyNodeInspector = document.getElementById("story-node-inspector");
+const storyFocusBtn = document.getElementById("story-focus-btn");
 
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
@@ -62,29 +75,23 @@ function hideTyping() {
 }
 
 function typeText(text) {
+  const content = String(text ?? "");
   let i = 0;
   const el = document.createElement("div");
   el.className = "msg assistant";
   messages.appendChild(el);
 
+  if (!content) return;
+
   const interval = setInterval(() => {
-    el.textContent += text[i];
+    el.textContent += content[i];
     i++;
     messages.scrollTop = messages.scrollHeight;
 
-    if (i >= text.length) {
+    if (i >= content.length) {
       clearInterval(interval);
     }
   }, 10);
-}
-
-function setActivePreset(presetName) {
-  document.querySelectorAll(".presets button").forEach(btn => {
-    btn.classList.remove("active-preset");
-    if (btn.getAttribute("data") === presetName) {
-      btn.classList.add("active-preset");
-    }
-  });
 }
 
 function escapeHtml(value) {
@@ -94,6 +101,172 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function getStoryNode(story, nodeId) {
+  return story?.nodes?.find((node) => node.id === nodeId) || null;
+}
+
+function renderStoryInspector(node) {
+  if (!storyNodeInspector || !node) return;
+
+  const statusLabels = {
+    active: "ТЕКУЩАЯ РАЗВИЛКА",
+    unlocked: "ПРОЖИТО",
+    discovered: "ОБНАРУЖЕНО",
+    missed: "НЕПРОЖИТЫЙ ПУТЬ",
+    hidden: "СИГНАЛ ОТСУТСТВУЕТ"
+  };
+  const status = document.createElement("span");
+  const title = document.createElement("strong");
+  const description = document.createElement("p");
+
+  status.textContent = statusLabels[node.status] || "УЗЕЛ СВЯЗИ";
+  title.textContent = node.title;
+  description.textContent = node.description;
+  storyNodeInspector.replaceChildren(status, title, description);
+}
+
+function renderStoryWeb(story) {
+  if (!storyWeb || !story?.graph || !Array.isArray(story.nodes)) return;
+
+  const width = Number(story.graph.width) || 2640;
+  const height = Number(story.graph.height) || 2040;
+  const nodeWidth = 190;
+  const nodeHeight = 84;
+  const nodesById = new Map(story.nodes.map((node) => [node.id, node]));
+  const svgNamespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNamespace, "svg");
+
+  storyWeb.style.width = `${width}px`;
+  storyWeb.style.height = `${height}px`;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("aria-hidden", "true");
+
+  for (const node of story.nodes) {
+    for (const parentId of node.parent_ids || []) {
+      const parent = nodesById.get(parentId);
+      if (!parent) continue;
+
+      const path = document.createElementNS(svgNamespace, "path");
+      const startX = Number(parent.x) + nodeWidth;
+      const startY = Number(parent.y) + nodeHeight / 2;
+      const endX = Number(node.x);
+      const endY = Number(node.y) + nodeHeight / 2;
+      const bend = Math.max(50, (endX - startX) * 0.48);
+
+      path.setAttribute(
+        "d",
+        `M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`
+      );
+      path.classList.add(
+        `story-web__edge--${node.status || "hidden"}`
+      );
+      svg.appendChild(path);
+    }
+  }
+
+  storyWeb.replaceChildren(svg);
+
+  for (const node of story.nodes) {
+    const button = document.createElement("button");
+    const type = document.createElement("span");
+    const title = document.createElement("strong");
+    const subtitle = document.createElement("small");
+
+    button.type = "button";
+    button.className = `story-web__node is-${node.status || "hidden"}`;
+    button.style.left = `${Number(node.x) || 0}px`;
+    button.style.top = `${Number(node.y) || 0}px`;
+    button.dataset.storyNodeId = node.id;
+    button.setAttribute("aria-label", `${node.title}. ${node.subtitle}`);
+    if (node.id === story.current_node_id) {
+      button.classList.add("is-current-node");
+    }
+
+    type.textContent = String(node.type || "node").toUpperCase();
+    title.textContent = node.title;
+    subtitle.textContent = node.subtitle;
+    button.append(type, title, subtitle);
+    button.addEventListener("click", () => renderStoryInspector(node));
+    storyWeb.appendChild(button);
+  }
+
+  renderStoryInspector(
+    getStoryNode(story, story.current_node_id) || story.nodes[0]
+  );
+}
+
+function focusCurrentStoryNode() {
+  if (!storyWebViewport || !currentStory) return;
+
+  const node = getStoryNode(currentStory, currentStory.current_node_id);
+  if (!node) return;
+
+  storyWebViewport.scrollTo({
+    left: Math.max(0, Number(node.x) - storyWebViewport.clientWidth / 2 + 95),
+    top: Math.max(0, Number(node.y) - storyWebViewport.clientHeight / 2 + 42),
+    behavior: "smooth"
+  });
+}
+
+function renderStory(story) {
+  currentStory = story;
+  const relationship = story?.relationship || {};
+  const pathTitle = story?.path?.title || "Маршрут не определён";
+
+  if (storyModeLabel) {
+    storyModeLabel.textContent = story?.story_mode?.enabled
+      ? "Активна по умолчанию"
+      : "Отключена";
+  }
+  if (storyPathLabel) storyPathLabel.textContent = pathTitle;
+  if (storySummaryMode) {
+    storySummaryMode.textContent =
+      story?.story_mode?.label || "Живая история";
+  }
+  if (storySummaryPath) {
+    storySummaryPath.textContent = `${pathTitle} · ${story?.path?.stance || "первый выбор впереди"}`;
+  }
+  if (storySummaryLink) {
+    storySummaryLink.textContent =
+      `Д ${relationship.trust || 0} · Б ${relationship.closeness || 0} · ` +
+      `С ${relationship.autonomy || 0} · О ${relationship.caution || 0}`;
+  }
+
+  renderStoryWeb(story);
+}
+
+async function loadStory() {
+  try {
+    const response = await fetch("/api/assistant/story", {
+      headers: { "Accept": "application/json" }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.story) {
+      throw new Error(data.error || "Story request failed");
+    }
+
+    renderStory(data.story);
+    return data.story;
+  } catch (error) {
+    console.error("story load error:", error);
+    if (storyPathLabel) storyPathLabel.textContent = "Не удалось загрузить";
+    return null;
+  }
+}
+
+async function openStoryModal() {
+  if (!storyModal) return;
+  storyModal.hidden = false;
+  await loadStory();
+  requestAnimationFrame(focusCurrentStoryNode);
+}
+
+function closeStoryModal() {
+  if (!storyModal) return;
+  storyModal.hidden = true;
 }
 
 function getMemoryItems(data) {
@@ -259,7 +432,6 @@ async function loadPersona() {
     nameInput.value = assistantName;
   }
 
-  setActivePreset(d.preset_name);
 }
 
 // загрузка памяти
@@ -402,6 +574,7 @@ async function send(msg) {
   const d = await r.json();
 
   if (!r.ok) {
+    hideTyping();
     add("assistant", "Ошибка");
     return;
   }
@@ -409,11 +582,14 @@ async function send(msg) {
   session_id = d.session_id;
   sessionEl.textContent = session_id;
 
-  typeText(d.answer);
   hideTyping();
+  typeText(d.answer);
 
   loadMemory();
   loadMemoryItems();
+  if (d.story_updated) {
+    loadStory();
+  }
 }
 
 // форма
@@ -465,7 +641,30 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && memoryModal && !memoryModal.hidden) {
     closeMemoryModal();
   }
+  if (e.key === "Escape" && storyModal && !storyModal.hidden) {
+    closeStoryModal();
+  }
 });
+
+if (storyOpenBtn) {
+  storyOpenBtn.onclick = openStoryModal;
+}
+
+if (storyModalClose) {
+  storyModalClose.onclick = closeStoryModal;
+}
+
+if (storyModal) {
+  storyModal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-story-close]")) {
+      closeStoryModal();
+    }
+  });
+}
+
+if (storyFocusBtn) {
+  storyFocusBtn.onclick = focusCurrentStoryNode;
+}
 
 if (memoryClearBtn) {
   memoryClearBtn.onclick = async () => {
@@ -591,36 +790,6 @@ if (memoryItemsEl) {
   };
 }
 
-// пресеты
-document.querySelectorAll(".presets button").forEach(btn => {
-  btn.onclick = async () => {
-    const preset = btn.getAttribute("data");
-
-    const res = await fetch("/api/assistant/preset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ preset_name: preset })
-    });
-
-    if (!res.ok) {
-      add("assistant", "Не получилось сменить характер 😔");
-      return;
-    }
-
-    let text = "Я изменилась 😉";
-
-    if (preset === "cute") text = "Теперь я буду заботиться о тебе 💖";
-    if (preset === "spicy") text = "Оу... теперь будет жарко 😏";
-    if (preset === "friend") text = "Ну всё, теперь я твоя подруга 😄";
-    if (preset === "shy_love") text = "Эм... я... теперь немного другая... 👉👈";
-    if (preset === "aggressive") text = "Ну всё, готовься 😈";
-    if (preset === "calm") text = "Хорошо, давай спокойно пообщаемся.";
-
-    add("assistant", text);
-    await loadPersona();
-  };
-});
-
 // старт
 (async function init() {
   try {
@@ -629,6 +798,7 @@ document.querySelectorAll(".presets button").forEach(btn => {
     await loadMemory();
     await loadMemoryItems();
     await loadMessages();
+    await loadStory();
   } catch (e) {
     console.error("init error:", e);
   }

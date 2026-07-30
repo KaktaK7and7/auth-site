@@ -259,6 +259,36 @@ test("version 2 linear saves migrate into route-specific branches", () => {
 });
 
 
+test("explicit zero closeness stays zero until a choice changes it", () => {
+  let state = createInitialStoryState();
+  state = applyStoryChoice(
+    state,
+    "first_contact",
+    "explain_first",
+  ).state;
+  state = applyStoryChoice(
+    state,
+    "verification_protocol",
+    "controlled_test",
+  ).state;
+
+  assert.equal(state.relationship.trust, 2);
+  assert.equal(state.relationship.closeness, 0);
+  assert.equal(
+    normalizeStoryState(state).relationship.closeness,
+    0,
+  );
+
+  state = applyStoryChoice(
+    state,
+    "temporary_name",
+    "keep_melissa",
+  ).state;
+
+  assert.equal(state.relationship.closeness, 1);
+});
+
+
 test("story context enforces Melissa's own voice without preset personality", () => {
   let state = createInitialStoryState();
   state = applyStoryChoice(

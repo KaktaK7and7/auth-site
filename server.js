@@ -25,8 +25,13 @@ const {
   buildStoryContext,
   createInitialStoryState,
   normalizeCompanionName,
+  normalizeStorySignal,
   normalizeStoryState,
 } = require("./lib/melissa-story");
+const {
+  buildActivityContext,
+  buildCapabilityContext,
+} = require("./lib/activity-context");
 require("dotenv").config();
 const app = express();
 
@@ -505,6 +510,28 @@ async function getTopCommands(userId) {
   return result.rows;
 }
 
+async function getRecentAiActivity(userId) {
+  const user = await getUserById(userId);
+
+  if (!user?.activity_tracking_enabled || !user.ai_context_enabled) {
+    return [];
+  }
+
+  const result = await pool.query(
+    `
+    SELECT event_type, feature_id, subject_label, occurred_at
+    FROM user_activity_events
+    WHERE user_id = $1
+      AND ai_context_allowed = TRUE
+    ORDER BY occurred_at DESC, id DESC
+    LIMIT 8
+    `,
+    [userId],
+  );
+
+  return result.rows;
+}
+
 async function ensureMelissaStoryState(userId, queryable = pool) {
   const initialState = createInitialStoryState();
 
@@ -593,6 +620,35 @@ async function recordMelissaStoryChoice(
     throw error;
   } finally {
     client.release();
+  }
+}
+
+async function applyStorySignalSafely(userId, rawSignal) {
+  const signal = normalizeStorySignal(rawSignal);
+
+  if (!signal) {
+    return null;
+  }
+
+  try {
+    return await recordMelissaStoryChoice(
+      userId,
+      signal.choice_id,
+      signal.option_id,
+      signal.custom_name,
+    );
+  } catch (error) {
+    if (
+      error.code === "23505"
+      || /уже сделан|сейчас недоступен|неизвестн|имя должно/i.test(
+        String(error.message || ""),
+      )
+    ) {
+      console.warn("Ignored stale Melissa story signal:", error.message);
+      return null;
+    }
+
+    throw error;
   }
 }
 
@@ -876,7 +932,12 @@ app.post(
 
 app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
   try {
-    const { message, session_id = null } = req.body;
+    const {
+      message,
+      session_id = null,
+      capabilities = [],
+      preceding_assistant_lines = [],
+    } = req.body;
     const normalizedMessage = String(message || "").trim();
 
     if (!normalizedMessage) {
@@ -891,7 +952,26 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid session_id" });
     }
 
-    const storyState = await ensureMelissaStoryState(req.assistantUser.id);
+    if (
+      !Array.isArray(preceding_assistant_lines)
+      || preceding_assistant_lines.length > 2
+      || preceding_assistant_lines.some(
+        (line) =>
+          typeof line !== "string"
+          || !line.trim()
+          || line.trim().length > 600
+          || /[\u0000-\u001f\u007f]/.test(line),
+      )
+    ) {
+      return res.status(400).json({
+        error: "Invalid preceding assistant context",
+      });
+    }
+
+    const [storyState, activityEvents] = await Promise.all([
+      ensureMelissaStoryState(req.assistantUser.id),
+      getRecentAiActivity(req.assistantUser.id),
+    ]);
     const response = await assistantFetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -899,13 +979,131 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
         user_id: req.assistantUser.id,
         message: normalizedMessage,
         session_id,
+        preceding_assistant_lines: preceding_assistant_lines.map(
+          (line) => line.trim(),
+        ),
         story_context: buildStoryContext(storyState),
+        activity_context: buildActivityContext(activityEvents),
+        capability_context: buildCapabilityContext(capabilities),
+      }),
+    });
+    const data = await readAssistantResponse(response);
+
+    if (response.ok && data?.story_signal) {
+      const updatedState = await applyStorySignalSafely(
+        req.assistantUser.id,
+        data.story_signal,
+      );
+
+      if (updatedState) {
+        data.story_updated = true;
+        data.story = buildPublicStoryState(updatedState);
+      }
+    }
+
+    if (data && typeof data === "object") {
+      delete data.story_signal;
+    }
+
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/chat error");
+  }
+});
+
+app.post("/api/assistant/reaction", requireAssistantAuth, async (req, res) => {
+  try {
+    const featureId = String(req.body?.feature_id || "").trim().toLowerCase();
+    const subjectLabel = String(req.body?.subject_label || "").trim();
+    const resultText = String(req.body?.result_text || "").trim();
+    const capabilities = req.body?.capabilities || [];
+    const sessionId = req.body?.session_id ?? null;
+
+    if (
+      !FEATURE_ID_PATTERN.test(featureId)
+      || subjectLabel.length > 120
+      || resultText.length > 240
+      || /[\u0000-\u001f\u007f]/.test(subjectLabel)
+      || /[\u0000-\u001f\u007f]/.test(resultText)
+      || (
+        sessionId !== null
+        && (!Number.isInteger(sessionId) || sessionId < 0)
+      )
+    ) {
+      return res.status(400).json({ error: "Invalid command context" });
+    }
+
+    const [user, storyState, activityEvents] = await Promise.all([
+      getUserById(req.assistantUser.id),
+      ensureMelissaStoryState(req.assistantUser.id),
+      getRecentAiActivity(req.assistantUser.id),
+    ]);
+
+    if (!user?.activity_tracking_enabled || !user.ai_context_enabled) {
+      return res.status(403).json({
+        error: "Command reactions require activity context consent",
+      });
+    }
+
+    const response = await assistantFetch("/reaction", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: req.assistantUser.id,
+        feature_id: featureId,
+        subject_label: subjectLabel,
+        result_text: resultText,
+        session_id: sessionId,
+        story_context: buildStoryContext(storyState),
+        activity_context: buildActivityContext(activityEvents),
+        capability_context: buildCapabilityContext(capabilities),
       }),
     });
     const data = await readAssistantResponse(response);
     return res.status(response.status).json(data);
   } catch (error) {
-    return sendAssistantError(res, error, "assistant/chat error");
+    return sendAssistantError(res, error, "assistant/reaction error");
+  }
+});
+
+app.post("/api/assistant/proactive", requireAssistantAuth, async (req, res) => {
+  try {
+    const idleMinutes = Number(req.body?.idle_minutes);
+    const capabilities = req.body?.capabilities || [];
+    const sessionId = req.body?.session_id ?? null;
+
+    if (
+      !Number.isFinite(idleMinutes)
+      || idleMinutes < 1
+      || idleMinutes > 24 * 60
+      || (
+        sessionId !== null
+        && (!Number.isInteger(sessionId) || sessionId < 0)
+      )
+    ) {
+      return res.status(400).json({ error: "Invalid idle time" });
+    }
+
+    const [storyState, activityEvents] = await Promise.all([
+      ensureMelissaStoryState(req.assistantUser.id),
+      getRecentAiActivity(req.assistantUser.id),
+    ]);
+    const response = await assistantFetch("/proactive", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: req.assistantUser.id,
+        idle_minutes: Math.round(idleMinutes),
+        session_id: sessionId,
+        story_context: buildStoryContext(storyState),
+        activity_context: buildActivityContext(activityEvents),
+        capability_context: buildCapabilityContext(capabilities),
+      }),
+    });
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/proactive error");
   }
 });
 
@@ -1388,7 +1586,7 @@ app.post("/api/desktop/activity", activityApiLimiter, async (req, res) => {
           user.id,
           eventType,
           featureId,
-          subjectLabel || null,
+          user.ai_context_enabled ? (subjectLabel || null) : null,
           Boolean(user.ai_context_enabled),
         ],
       );
@@ -1421,6 +1619,82 @@ app.post("/api/desktop/activity", activityApiLimiter, async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Не удалось сохранить событие активности",
+    });
+  }
+});
+
+app.patch("/api/desktop/preferences", activityApiLimiter, async (req, res) => {
+  try {
+    const user = await getDesktopUserByToken(req);
+
+    if (!user) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid session",
+      });
+    }
+
+    const activityTrackingEnabled = req.body?.activity_tracking_enabled;
+    const requestedAiContextEnabled = req.body?.ai_context_enabled;
+
+    if (
+      typeof activityTrackingEnabled !== "boolean"
+      || typeof requestedAiContextEnabled !== "boolean"
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid preferences",
+      });
+    }
+
+    const aiContextEnabled =
+      activityTrackingEnabled && requestedAiContextEnabled;
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `
+        UPDATE users
+        SET activity_tracking_enabled = $1,
+            ai_context_enabled = $2
+        WHERE id = $3
+        `,
+        [activityTrackingEnabled, aiContextEnabled, user.id],
+      );
+
+      if (!aiContextEnabled) {
+        await client.query(
+          `
+          UPDATE user_activity_events
+          SET ai_context_allowed = FALSE
+          WHERE user_id = $1
+          `,
+          [user.id],
+        );
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    user.activity_tracking_enabled = activityTrackingEnabled;
+    user.ai_context_enabled = aiContextEnabled;
+
+    return res.json({
+      ok: true,
+      user: await getUserPayload(user),
+    });
+  } catch (error) {
+    console.error("desktop preferences error:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Не удалось сохранить настройки приватности",
     });
   }
 });

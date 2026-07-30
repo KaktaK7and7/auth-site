@@ -212,7 +212,8 @@
                   сообщений, несколько вариантов характера и редактируемая
                   долговременная память. Дальше мы свяжем разговор с каталогом
                   функций Assistant и добровольно разрешёнными событиями с
-                  компьютера — без передачи полного текста голосовых команд.
+                  компьютера. Для выполненной команды это тип функции и, только
+                  с отдельного согласия, короткая распознанная формулировка.
                 </p>
                 <div class="melissa-panel__points">
                   <span>Память под контролем</span>
@@ -263,35 +264,75 @@
                   <span>MEMORY LINK // SEASON 01</span>
                   <strong>ПОТЕРЯННЫЙ СИГНАЛ</strong>
                 </div>
-                <div class="chronicle-map__nodes">
-                  <article class="is-open">
-                    <span>01</span>
-                    <div>
-                      <strong>Белый шум</strong>
-                      <small>первый контакт</small>
-                    </div>
-                  </article>
-                  <i></i>
-                  <article class="is-discovered">
-                    <span>02</span>
-                    <div>
-                      <strong>Временное имя</strong>
-                      <small>решение пользователя</small>
-                    </div>
-                  </article>
-                  <i></i>
-                  <article class="is-locked">
-                    <span>03</span>
-                    <div>
-                      <strong>Неизвестный фрагмент</strong>
-                      <small>сигнал нестабилен</small>
-                    </div>
-                  </article>
+                <div class="chronicle-flow-viewport">
+                  <div
+                    class="chronicle-flow"
+                    role="img"
+                    aria-label="Пример ветвящейся карты Хроники связи"
+                  >
+                    <svg viewBox="0 0 820 360" aria-hidden="true">
+                      <path d="M142 180 C180 180 182 180 220 180" />
+                      <path d="M362 180 C405 180 405 68 448 68" />
+                      <path d="M362 180 C405 180 405 180 448 180" />
+                      <path d="M362 180 C405 180 405 292 448 292" />
+                      <path d="M590 68 C634 68 630 180 674 180" />
+                      <path d="M590 180 C630 180 634 180 674 180" />
+                      <path d="M590 292 C634 292 630 180 674 180" />
+                    </svg>
+
+                    <article class="chronicle-flow__node node-signal is-open">
+                      <span>01</span>
+                      <div>
+                        <strong>Белый шум</strong>
+                        <small>первый контакт</small>
+                      </div>
+                    </article>
+
+                    <article class="chronicle-flow__node node-contact is-current">
+                      <span>02</span>
+                      <div>
+                        <strong>Первый контакт</strong>
+                        <small>решение в диалоге</small>
+                      </div>
+                    </article>
+
+                    <article class="chronicle-flow__node node-path-a is-open">
+                      <span>03A</span>
+                      <div>
+                        <strong>Прожитый путь</strong>
+                        <small>ваше решение</small>
+                      </div>
+                    </article>
+
+                    <article class="chronicle-flow__node node-path-b is-missed">
+                      <span>03B</span>
+                      <div>
+                        <strong>Непрожитый путь</strong>
+                        <small>ветка закрыта</small>
+                      </div>
+                    </article>
+
+                    <article class="chronicle-flow__node node-path-c is-missed">
+                      <span>03C</span>
+                      <div>
+                        <strong>Непрожитый путь</strong>
+                        <small>ветка закрыта</small>
+                      </div>
+                    </article>
+
+                    <article class="chronicle-flow__node node-memory is-discovered">
+                      <span>04</span>
+                      <div>
+                        <strong>Слабый сигнал</strong>
+                        <small>следующий фрагмент</small>
+                      </div>
+                    </article>
+                  </div>
                 </div>
                 <p>
-                  Неизвестные узлы не раскрывают сюжет заранее. Карта меняется
-                  только после значимых решений, миссий и подтверждённых
-                  воспоминаний.
+                  Решения принимаются не кнопками: пользователь отвечает своими
+                  словами, а карта сохраняет уже прожитый путь. Закрытые узлы не
+                  раскрывают будущие события заранее.
                 </p>
               </div>
 

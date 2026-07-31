@@ -33,6 +33,48 @@ test("living story is enabled by default and starts at the first fork", () => {
 });
 
 
+test("relationship web keeps closed cards from overlapping", () => {
+  const publicState = buildPublicStoryState(createInitialStoryState());
+  const nodeWidth = 190;
+  const nodeHeight = 82;
+  const expandedNodeWidth = 360;
+  const expandedNodeHeight = 176;
+  const minimumGap = 12;
+
+  for (let index = 0; index < publicState.nodes.length; index += 1) {
+    const first = publicState.nodes[index];
+
+    assert.ok(first.x >= 0 && first.y >= 0, `${first.id} starts outside graph`);
+    assert.ok(
+      first.x + expandedNodeWidth <= publicState.graph.width,
+      `${first.id} expands beyond graph width`,
+    );
+    assert.ok(
+      first.y + expandedNodeHeight <= publicState.graph.height,
+      `${first.id} expands beyond graph height`,
+    );
+
+    for (
+      let candidateIndex = index + 1;
+      candidateIndex < publicState.nodes.length;
+      candidateIndex += 1
+    ) {
+      const second = publicState.nodes[candidateIndex];
+      const separated =
+        first.x + nodeWidth + minimumGap <= second.x
+        || second.x + nodeWidth + minimumGap <= first.x
+        || first.y + nodeHeight + minimumGap <= second.y
+        || second.y + nodeHeight + minimumGap <= first.y;
+
+      assert.ok(
+        separated,
+        `story nodes overlap: ${first.id} and ${second.id}`,
+      );
+    }
+  }
+});
+
+
 test("the first choice opens genuinely different next scenes", () => {
   const variants = [
     ["together", "alliance", "alliance_terms"],

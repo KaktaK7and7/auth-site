@@ -2,6 +2,9 @@ let session_id = 0;
 let typingEl = null;
 let user_id = null;
 let currentStory = null;
+let storyWebZoom = 0.52;
+let expandedStoryNodeId = "";
+let storyPanState = null;
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
@@ -27,6 +30,10 @@ const storyWeb = document.getElementById("story-web");
 const storyWebViewport = document.getElementById("story-web-viewport");
 const storyNodeInspector = document.getElementById("story-node-inspector");
 const storyFocusBtn = document.getElementById("story-focus-btn");
+const storyFitBtn = document.getElementById("story-fit-btn");
+const storyZoomOutBtn = document.getElementById("story-zoom-out");
+const storyZoomInBtn = document.getElementById("story-zoom-in");
+const storyZoomLabel = document.getElementById("story-zoom-label");
 
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
@@ -107,6 +114,61 @@ function getStoryNode(story, nodeId) {
   return story?.nodes?.find((node) => node.id === nodeId) || null;
 }
 
+function clampStoryWebZoom(value) {
+  return Math.min(1.2, Math.max(0.18, value));
+}
+
+function syncStoryWebScale() {
+  if (!storyWeb || !currentStory?.graph) return;
+
+  const width = Number(currentStory.graph.width) || 2840;
+  const height = Number(currentStory.graph.height) || 3360;
+  const canvas = storyWeb.querySelector(".story-web__canvas");
+
+  storyWeb.style.width = `${width * storyWebZoom}px`;
+  storyWeb.style.height = `${height * storyWebZoom}px`;
+
+  if (canvas) {
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.style.transform = `scale(${storyWebZoom})`;
+  }
+
+  if (storyZoomLabel) {
+    storyZoomLabel.textContent = `${Math.round(storyWebZoom * 100)}%`;
+  }
+}
+
+function setStoryWebZoom(nextValue, clientX, clientY) {
+  if (!storyWebViewport || !storyWeb || !currentStory?.graph) return;
+
+  const nextZoom = clampStoryWebZoom(nextValue);
+  if (nextZoom === storyWebZoom) return;
+
+  const bounds = storyWebViewport.getBoundingClientRect();
+  const viewportX =
+    typeof clientX === "number"
+      ? clientX - bounds.left
+      : storyWebViewport.clientWidth / 2;
+  const viewportY =
+    typeof clientY === "number"
+      ? clientY - bounds.top
+      : storyWebViewport.clientHeight / 2;
+  const graphX = (storyWebViewport.scrollLeft + viewportX) / storyWebZoom;
+  const graphY = (storyWebViewport.scrollTop + viewportY) / storyWebZoom;
+
+  storyWebZoom = nextZoom;
+  syncStoryWebScale();
+
+  requestAnimationFrame(() => {
+    storyWebViewport.scrollTo({
+      left: graphX * nextZoom - viewportX,
+      top: graphY * nextZoom - viewportY,
+      behavior: "auto"
+    });
+  });
+}
+
 function renderStoryInspector(node) {
   if (!storyNodeInspector || !node) return;
 
@@ -130,16 +192,19 @@ function renderStoryInspector(node) {
 function renderStoryWeb(story) {
   if (!storyWeb || !story?.graph || !Array.isArray(story.nodes)) return;
 
-  const width = Number(story.graph.width) || 2640;
-  const height = Number(story.graph.height) || 2040;
+  const width = Number(story.graph.width) || 2840;
+  const height = Number(story.graph.height) || 3360;
   const nodeWidth = 190;
   const nodeHeight = 84;
   const nodesById = new Map(story.nodes.map((node) => [node.id, node]));
   const svgNamespace = "http://www.w3.org/2000/svg";
+  const canvas = document.createElement("div");
   const svg = document.createElementNS(svgNamespace, "svg");
 
-  storyWeb.style.width = `${width}px`;
-  storyWeb.style.height = `${height}px`;
+  canvas.className = "story-web__canvas";
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.style.transform = `scale(${storyWebZoom})`;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("aria-hidden", "true");
 
@@ -166,13 +231,16 @@ function renderStoryWeb(story) {
     }
   }
 
-  storyWeb.replaceChildren(svg);
+  canvas.appendChild(svg);
+  storyWeb.replaceChildren(canvas);
+  syncStoryWebScale();
 
   for (const node of story.nodes) {
     const button = document.createElement("button");
     const type = document.createElement("span");
     const title = document.createElement("strong");
     const subtitle = document.createElement("small");
+    const details = document.createElement("span");
 
     button.type = "button";
     button.className = `story-web__node is-${node.status || "hidden"}`;
@@ -183,13 +251,36 @@ function renderStoryWeb(story) {
     if (node.id === story.current_node_id) {
       button.classList.add("is-current-node");
     }
+    if (node.id === expandedStoryNodeId) {
+      button.classList.add("is-expanded");
+      button.setAttribute("aria-expanded", "true");
+    } else {
+      button.setAttribute("aria-expanded", "false");
+    }
 
     type.textContent = String(node.type || "node").toUpperCase();
     title.textContent = node.title;
     subtitle.textContent = node.subtitle;
-    button.append(type, title, subtitle);
-    button.addEventListener("click", () => renderStoryInspector(node));
-    storyWeb.appendChild(button);
+    details.className = "story-web__node-details";
+    details.textContent = node.description;
+    button.append(type, title, subtitle, details);
+    button.addEventListener("click", () => {
+      const shouldExpand = expandedStoryNodeId !== node.id;
+
+      expandedStoryNodeId = shouldExpand ? node.id : "";
+      canvas.querySelectorAll(".story-web__node.is-expanded").forEach((item) => {
+        item.classList.remove("is-expanded");
+        item.setAttribute("aria-expanded", "false");
+      });
+
+      if (shouldExpand) {
+        button.classList.add("is-expanded");
+        button.setAttribute("aria-expanded", "true");
+      }
+
+      renderStoryInspector(node);
+    });
+    canvas.appendChild(button);
   }
 
   renderStoryInspector(
@@ -204,9 +295,40 @@ function focusCurrentStoryNode() {
   if (!node) return;
 
   storyWebViewport.scrollTo({
-    left: Math.max(0, Number(node.x) - storyWebViewport.clientWidth / 2 + 95),
-    top: Math.max(0, Number(node.y) - storyWebViewport.clientHeight / 2 + 42),
+    left: Math.max(
+      0,
+      (Number(node.x) + 95) * storyWebZoom
+        - storyWebViewport.clientWidth / 2
+    ),
+    top: Math.max(
+      0,
+      (Number(node.y) + 42) * storyWebZoom
+        - storyWebViewport.clientHeight / 2
+    ),
     behavior: "smooth"
+  });
+}
+
+function fitEntireStoryWeb() {
+  if (!storyWebViewport || !currentStory?.graph) return;
+
+  const width = Number(currentStory.graph.width) || 2840;
+  const height = Number(currentStory.graph.height) || 3360;
+  const nextZoom = clampStoryWebZoom(
+    Math.min(
+      (storyWebViewport.clientWidth - 28) / width,
+      (storyWebViewport.clientHeight - 28) / height
+    )
+  );
+
+  storyWebZoom = nextZoom;
+  syncStoryWebScale();
+  requestAnimationFrame(() => {
+    storyWebViewport.scrollTo({
+      left: 0,
+      top: 0,
+      behavior: "smooth"
+    });
   });
 }
 
@@ -664,6 +786,79 @@ if (storyModal) {
 
 if (storyFocusBtn) {
   storyFocusBtn.onclick = focusCurrentStoryNode;
+}
+
+if (storyFitBtn) {
+  storyFitBtn.onclick = fitEntireStoryWeb;
+}
+
+if (storyZoomOutBtn) {
+  storyZoomOutBtn.onclick = () => setStoryWebZoom(storyWebZoom - 0.1);
+}
+
+if (storyZoomInBtn) {
+  storyZoomInBtn.onclick = () => setStoryWebZoom(storyWebZoom + 0.1);
+}
+
+if (storyWebViewport) {
+  storyWebViewport.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      const direction = event.deltaY < 0 ? 1 : -1;
+      setStoryWebZoom(
+        storyWebZoom + direction * 0.08,
+        event.clientX,
+        event.clientY
+      );
+    },
+    { passive: false }
+  );
+
+  storyWebViewport.addEventListener("pointerdown", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+
+    if (event.button !== 0 || target?.closest(".story-web__node")) {
+      return;
+    }
+
+    storyPanState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: storyWebViewport.scrollLeft,
+      scrollTop: storyWebViewport.scrollTop
+    };
+    storyWebViewport.setPointerCapture(event.pointerId);
+    storyWebViewport.classList.add("is-panning");
+  });
+
+  storyWebViewport.addEventListener("pointermove", (event) => {
+    if (!storyPanState || storyPanState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    storyWebViewport.scrollLeft =
+      storyPanState.scrollLeft - (event.clientX - storyPanState.startX);
+    storyWebViewport.scrollTop =
+      storyPanState.scrollTop - (event.clientY - storyPanState.startY);
+  });
+
+  const finishStoryPan = (event) => {
+    if (!storyPanState || storyPanState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (storyWebViewport.hasPointerCapture(event.pointerId)) {
+      storyWebViewport.releasePointerCapture(event.pointerId);
+    }
+
+    storyPanState = null;
+    storyWebViewport.classList.remove("is-panning");
+  };
+
+  storyWebViewport.addEventListener("pointerup", finishStoryPan);
+  storyWebViewport.addEventListener("pointercancel", finishStoryPan);
 }
 
 if (memoryClearBtn) {

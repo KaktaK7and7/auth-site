@@ -112,8 +112,17 @@
 
     <div class="story-web-shell">
       <div class="story-web-toolbar">
-        <span>Карта перемещается прокруткой. Скрытые узлы не раскрывают будущие события.</span>
-        <button id="story-focus-btn" type="button">К текущему узлу</button>
+        <span>
+          Колесо меняет масштаб, зажатая левая кнопка перемещает карту.
+          Нажми на узел, чтобы раскрыть его.
+        </span>
+        <div class="story-web-toolbar__controls">
+          <button id="story-zoom-out" type="button" aria-label="Уменьшить масштаб">−</button>
+          <strong id="story-zoom-label">52%</strong>
+          <button id="story-zoom-in" type="button" aria-label="Увеличить масштаб">+</button>
+          <button id="story-focus-btn" type="button">К текущему узлу</button>
+          <button id="story-fit-btn" type="button">Вся паутина</button>
+        </div>
       </div>
       <div class="story-web-viewport" id="story-web-viewport">
         <div class="story-web" id="story-web"></div>

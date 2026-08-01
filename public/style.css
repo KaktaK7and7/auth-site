@@ -1071,6 +1071,94 @@ body {
   line-height: 1.55;
 }
 
+.companion-mode-picker {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.story-mode-card .companion-mode-picker button {
+  display: grid;
+  gap: 4px;
+  padding: 12px 13px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(226, 235, 255, 0.7);
+  text-align: left;
+}
+
+.story-mode-card .companion-mode-picker button.is-selected {
+  border-color: rgba(127, 255, 233, 0.58);
+  background: linear-gradient(
+    135deg,
+    rgba(56, 220, 201, 0.16),
+    rgba(124, 92, 255, 0.12)
+  );
+  color: #effffc;
+  box-shadow: inset 3px 0 0 #7fffe9;
+}
+
+.companion-mode-picker button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.companion-mode-picker strong,
+.companion-mode-picker small {
+  display: block;
+}
+
+.companion-mode-picker strong {
+  font-size: 13px;
+}
+
+.companion-mode-picker small {
+  color: rgba(226, 235, 255, 0.5);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.persona-preset-panel {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(124, 92, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(8, 11, 25, 0.72);
+}
+
+.persona-preset-panel[hidden] {
+  display: none;
+}
+
+.persona-preset-panel > small {
+  color: rgba(174, 251, 239, 0.62);
+  font-size: 9px;
+  letter-spacing: 0.13em;
+}
+
+.persona-preset-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.story-mode-card .persona-preset-list button {
+  min-width: 0;
+  padding: 9px 8px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(226, 235, 255, 0.64);
+  font-size: 11px;
+}
+
+.story-mode-card .persona-preset-list button.is-selected {
+  border-color: rgba(124, 92, 255, 0.7);
+  background: rgba(124, 92, 255, 0.2);
+  color: #ffffff;
+}
+
 .story-mode-card__path {
   display: grid;
   gap: 4px;
@@ -1631,6 +1719,84 @@ body {
 .memory-clear:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+.memory-reset {
+  width: 100%;
+  margin-top: 9px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 86, 126, 0.42);
+  border-radius: 10px;
+  background: rgba(255, 54, 104, 0.13);
+  color: #ffd9e2;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.memory-reset:hover {
+  background: rgba(255, 54, 104, 0.22);
+}
+
+.reset-confirmation {
+  display: grid;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 86, 126, 0.42);
+  border-radius: 12px;
+  background: rgba(35, 7, 18, 0.72);
+}
+
+.reset-confirmation[hidden] {
+  display: none;
+}
+
+.reset-confirmation > strong {
+  color: #ffdce5;
+  font-size: 14px;
+}
+
+.reset-confirmation p {
+  margin: 0;
+  color: rgba(255, 226, 234, 0.66);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.reset-confirmation label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  color: rgba(255, 235, 240, 0.78);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.reset-confirmation > div {
+  display: flex;
+  gap: 8px;
+}
+
+.reset-confirmation button {
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.reset-confirmation button:first-child {
+  border-color: rgba(255, 86, 126, 0.5);
+  background: rgba(255, 54, 104, 0.2);
+}
+
+.reset-confirmation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .memory-group {

@@ -56,17 +56,30 @@
       <button id="save-name-btn">Сохранить</button>
     </div>
 
-    <h3>Живая история</h3>
+    <h3>Режим компаньона</h3>
 
     <div class="story-mode-card">
       <div class="story-mode-card__status">
         <span></span>
-        <strong id="story-mode-label">Активна</strong>
+        <strong id="story-mode-label">Загрузка...</strong>
       </div>
-      <p>
-        Характер не выбирается пресетом. Он меняется через ваши решения,
-        доверие, близость и границы.
+      <div class="companion-mode-picker" role="group" aria-label="Режим компаньона">
+        <button id="companion-mode-story" type="button">
+          <strong>Живая история</strong>
+          <small>Мелисса живёт внутри своей истории, а характер меняется вместе с вашей связью.</small>
+        </button>
+        <button id="companion-mode-plain" type="button">
+          <strong>Обычный компаньон</strong>
+          <small>Свободное общение без сюжетной роли, с выбранной манерой общения.</small>
+        </button>
+      </div>
+      <p id="companion-mode-note">
+        Загружаю выбранный режим.
       </p>
+      <div class="persona-preset-panel" id="persona-preset-panel" hidden>
+        <small>ХАРАКТЕР ОБЩЕНИЯ</small>
+        <div class="persona-preset-list" id="persona-preset-list"></div>
+      </div>
       <div class="story-mode-card__path">
         <small>ТЕКУЩИЙ ПУТЬ</small>
         <strong id="story-path-label">Загрузка...</strong>
@@ -152,7 +165,24 @@
 
     <div class="memory-items" id="memory-items"></div>
 
-    <button class="memory-clear" id="memory-clear-btn" type="button">Очистить всю память</button>
+    <button class="memory-clear" id="memory-clear-btn" type="button">Очистить сохранённые факты</button>
+    <button class="memory-reset" id="assistant-reset-btn" type="button">Начать с компаньоном заново</button>
+
+    <section class="reset-confirmation" id="reset-confirmation" hidden>
+      <strong>Точно хотите начать заново и всё стереть?</strong>
+      <p>
+        Будут удалены память, история диалогов, имя и весь прогресс
+        «Хроники связи». Аккаунт, статистика команд и достижения сохранятся.
+      </p>
+      <label>
+        <input id="reset-confirm-checkbox" type="checkbox">
+        <span>Я понимаю, что восстановить эту историю будет нельзя.</span>
+      </label>
+      <div>
+        <button id="reset-confirm-btn" type="button" disabled>Да, начать заново</button>
+        <button id="reset-cancel-btn" type="button">Отмена</button>
+      </div>
+    </section>
   </div>
 </div>
 

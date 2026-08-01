@@ -8,6 +8,7 @@ const {
   createInitialStoryState,
   normalizeStorySignal,
   normalizeStoryState,
+  setStoryMode,
 } = require("../lib/melissa-story");
 
 
@@ -30,6 +31,24 @@ test("living story is enabled by default and starts at the first fork", () => {
     ),
     [],
   );
+});
+
+
+test("story mode can be paused without losing Chronicle progress", () => {
+  const progressed = applyStoryChoice(
+    createInitialStoryState(),
+    "first_contact",
+    "together",
+  ).state;
+  const paused = setStoryMode(progressed, false);
+  const publicState = buildPublicStoryState(paused);
+
+  assert.equal(paused.choices.first_contact, "together");
+  assert.equal(publicState.path.id, "alliance");
+  assert.equal(publicState.story_mode.enabled, false);
+  assert.equal(publicState.story_mode.character_locked, false);
+  assert.equal(publicState.story_mode.personality_source, "persona_preset");
+  assert.equal(publicState.story_mode.label, "Обычный компаньон");
 });
 
 

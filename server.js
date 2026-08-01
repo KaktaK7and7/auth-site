@@ -27,11 +27,13 @@ const {
   normalizeCompanionName,
   normalizeStorySignal,
   normalizeStoryState,
+  setStoryMode,
 } = require("./lib/melissa-story");
 const {
   buildActivityContext,
   buildCapabilityContext,
 } = require("./lib/activity-context");
+const { validateScreenshotDataUrl } = require("./lib/screenshot");
 require("dotenv").config();
 const app = express();
 
@@ -43,6 +45,42 @@ const CORS_ALLOWED_ORIGINS = parseAllowedOrigins(
   process.env.CORS_ALLOWED_ORIGINS,
 );
 const ASSISTANT_MAX_MESSAGE_LENGTH = 10_000;
+const ASSISTANT_MAX_SCREEN_MESSAGE_LENGTH = 2_000;
+const PERSONA_PRESET_OPTIONS = [
+  {
+    id: "cute",
+    title: "Заботливая",
+    description: "Тёплая, мягкая и внимательная манера общения.",
+  },
+  {
+    id: "calm",
+    title: "Спокойная",
+    description: "Уравновешенные и чёткие ответы без лишних эмоций.",
+  },
+  {
+    id: "spicy",
+    title: "Дерзкая",
+    description: "Игривый характер, острый юмор и уверенный тон.",
+  },
+  {
+    id: "friend",
+    title: "Подруга",
+    description: "Живое дружеское общение, шутки и прямые ответы.",
+  },
+  {
+    id: "shy_love",
+    title: "Застенчивая",
+    description: "Мягкая, немного неловкая и сдержанная в эмоциях.",
+  },
+  {
+    id: "aggressive",
+    title: "Резкая",
+    description: "Коротко, жёстко и без стремления всегда соглашаться.",
+  },
+];
+const PERSONA_PRESET_IDS = new Set(
+  PERSONA_PRESET_OPTIONS.map((preset) => preset.id),
+);
 const ALLOWED_ACTIVITY_EVENT_TYPES = new Set([
   "assistant.started",
   "command.completed",
@@ -99,6 +137,16 @@ const activityApiLimiter = rateLimit({
   handler: (_req, res) => res.status(429).json({
     ok: false,
     error: "Слишком много событий активности",
+  }),
+});
+
+const visionApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 12,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    error: "Слишком много запросов анализа экрана. Попробуйте немного позже.",
   }),
 });
 
@@ -194,6 +242,7 @@ const pool = new Pool({
     : false
 });
 
+app.use("/api/assistant/vision", express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -672,6 +721,51 @@ async function updateMelissaStoryCompanionName(userId, name) {
   return updatedState;
 }
 
+async function updateMelissaStoryMode(userId, enabled) {
+  const state = await ensureMelissaStoryState(userId);
+  const updatedState = setStoryMode(state, enabled);
+
+  await pool.query(
+    `
+    UPDATE melissa_story_states
+    SET state = $2::jsonb, updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = $1
+    `,
+    [userId, JSON.stringify(updatedState)],
+  );
+
+  return updatedState;
+}
+
+async function resetMelissaStoryState(userId) {
+  const client = await pool.connect();
+  const initialState = createInitialStoryState();
+
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "DELETE FROM melissa_story_events WHERE user_id = $1",
+      [userId],
+    );
+    await client.query(
+      `
+      INSERT INTO melissa_story_states (user_id, state)
+      VALUES ($1, $2::jsonb)
+      ON CONFLICT (user_id) DO UPDATE SET
+        state = EXCLUDED.state,
+        updated_at = CURRENT_TIMESTAMP
+      `,
+      [userId, JSON.stringify(initialState)],
+    );
+    await client.query("COMMIT");
+    return initialState;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
 async function requireAssistantAuth(req, res, next) {
   try {
@@ -880,6 +974,37 @@ app.get("/api/assistant/story", requireAssistantAuth, async (req, res) => {
   }
 });
 
+app.patch(
+  "/api/assistant/story/mode",
+  requireAssistantAuth,
+  async (req, res) => {
+    try {
+      if (typeof req.body?.enabled !== "boolean") {
+        return res.status(400).json({
+          ok: false,
+          error: "Не выбран режим компаньона",
+        });
+      }
+
+      const state = await updateMelissaStoryMode(
+        req.assistantUser.id,
+        req.body.enabled,
+      );
+
+      return res.json({
+        ok: true,
+        story: buildPublicStoryState(state),
+      });
+    } catch (error) {
+      console.error("assistant/story mode error:", error);
+      return res.status(500).json({
+        ok: false,
+        error: "Не удалось переключить режим компаньона",
+      });
+    }
+  },
+);
+
 app.post(
   "/api/assistant/story/choices",
   requireAssistantAuth,
@@ -984,14 +1109,20 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
         ),
         story_mode_enabled: storyState.story_mode_enabled,
         companion_name: storyState.companion_name,
-        story_context: buildStoryContext(storyState),
+        story_context: storyState.story_mode_enabled
+          ? buildStoryContext(storyState)
+          : null,
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
       }),
     });
     const data = await readAssistantResponse(response);
 
-    if (response.ok && data?.story_signal) {
+    if (
+      response.ok
+      && storyState.story_mode_enabled
+      && data?.story_signal
+    ) {
       const updatedState = await applyStorySignalSafely(
         req.assistantUser.id,
         data.story_signal,
@@ -1012,6 +1143,75 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
     return sendAssistantError(res, error, "assistant/chat error");
   }
 });
+
+app.post(
+  "/api/assistant/vision",
+  visionApiLimiter,
+  requireAssistantAuth,
+  async (req, res) => {
+    try {
+      const message = String(req.body?.message || "").trim();
+      const imageDataUrl = validateScreenshotDataUrl(
+        req.body?.image_data_url,
+      );
+      const capabilities = req.body?.capabilities || [];
+      const precedingAssistantLines = req.body?.preceding_assistant_lines || [];
+      const sessionId = req.body?.session_id ?? null;
+
+      if (
+        !message
+        || message.length > ASSISTANT_MAX_SCREEN_MESSAGE_LENGTH
+        || !imageDataUrl
+        || (
+          sessionId !== null
+          && (!Number.isInteger(sessionId) || sessionId < 0)
+        )
+        || !Array.isArray(precedingAssistantLines)
+        || precedingAssistantLines.length > 2
+        || precedingAssistantLines.some(
+          (line) =>
+            typeof line !== "string"
+            || !line.trim()
+            || line.trim().length > 600
+            || /[\u0000-\u001f\u007f]/.test(line),
+        )
+      ) {
+        return res.status(400).json({
+          error: "Некорректный запрос анализа экрана",
+        });
+      }
+
+      const [storyState, activityEvents] = await Promise.all([
+        ensureMelissaStoryState(req.assistantUser.id),
+        getRecentAiActivity(req.assistantUser.id),
+      ]);
+      const response = await assistantFetch("/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: req.assistantUser.id,
+          message,
+          image_data_url: imageDataUrl,
+          session_id: sessionId,
+          preceding_assistant_lines: precedingAssistantLines.map(
+            (line) => line.trim(),
+          ),
+          story_mode_enabled: storyState.story_mode_enabled,
+          companion_name: storyState.companion_name,
+          story_context: storyState.story_mode_enabled
+            ? buildStoryContext(storyState)
+            : null,
+          activity_context: buildActivityContext(activityEvents),
+          capability_context: buildCapabilityContext(capabilities),
+        }),
+      });
+      const data = await readAssistantResponse(response);
+      return res.status(response.status).json(data);
+    } catch (error) {
+      return sendAssistantError(res, error, "assistant/vision error");
+    }
+  },
+);
 
 app.post("/api/assistant/reaction", requireAssistantAuth, async (req, res) => {
   try {
@@ -1058,7 +1258,9 @@ app.post("/api/assistant/reaction", requireAssistantAuth, async (req, res) => {
         session_id: sessionId,
         story_mode_enabled: storyState.story_mode_enabled,
         companion_name: storyState.companion_name,
-        story_context: buildStoryContext(storyState),
+        story_context: storyState.story_mode_enabled
+          ? buildStoryContext(storyState)
+          : null,
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
       }),
@@ -1101,7 +1303,9 @@ app.post("/api/assistant/proactive", requireAssistantAuth, async (req, res) => {
         session_id: sessionId,
         story_mode_enabled: storyState.story_mode_enabled,
         companion_name: storyState.companion_name,
-        story_context: buildStoryContext(storyState),
+        story_context: storyState.story_mode_enabled
+          ? buildStoryContext(storyState)
+          : null,
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
       }),
@@ -1123,9 +1327,12 @@ app.get("/api/assistant/persona", requireAssistantAuth, async (req, res) => {
     const data = await readAssistantResponse(response);
 
     if (response.ok && data) {
-      data.name = storyState.companion_name;
-      data.preset_name = "living_story";
-      data.identity = "Живая история · характер развивается в общении";
+      if (storyState.story_mode_enabled) {
+        data.name = storyState.companion_name;
+        data.preset_name = "living_story";
+        data.identity = "Живая история · характер развивается в общении";
+      }
+
       data.story_mode = buildPublicStoryState(storyState).story_mode;
     }
 
@@ -1135,16 +1342,70 @@ app.get("/api/assistant/persona", requireAssistantAuth, async (req, res) => {
   }
 });
 
+app.get(
+  "/api/assistant/persona/presets",
+  requireAssistantAuth,
+  async (req, res) => {
+    try {
+      const [response, storyState] = await Promise.all([
+        assistantFetch(`/persona/${req.assistantUser.id}`),
+        ensureMelissaStoryState(req.assistantUser.id),
+      ]);
+      const persona = await readAssistantResponse(response);
+
+      return res.status(response.status).json({
+        ok: response.ok,
+        selected: storyState.story_mode_enabled
+          ? null
+          : (persona?.preset_name || "default"),
+        presets: PERSONA_PRESET_OPTIONS,
+        story_mode: buildPublicStoryState(storyState).story_mode,
+      });
+    } catch (error) {
+      return sendAssistantError(
+        res,
+        error,
+        "assistant/persona presets error",
+      );
+    }
+  },
+);
+
 
 app.post("/api/assistant/preset", requireAssistantAuth, async (req, res) => {
   try {
     const storyState = await ensureMelissaStoryState(req.assistantUser.id);
     const publicStory = buildPublicStoryState(storyState);
 
-    return res.status(409).json({
-      ok: false,
-      error:
-        "В живой истории характер Мелиссы меняется через ваши отношения, а не через пресет.",
+    if (storyState.story_mode_enabled) {
+      return res.status(409).json({
+        ok: false,
+        error:
+          "В живой истории характер Мелиссы меняется через ваши отношения, а не через пресет.",
+        story_mode: publicStory.story_mode,
+      });
+    }
+
+    const presetName = String(req.body?.preset_name || "").trim();
+
+    if (!PERSONA_PRESET_IDS.has(presetName)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Неизвестный характер компаньона",
+      });
+    }
+
+    const response = await assistantFetch(
+      `/persona/${req.assistantUser.id}/preset`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preset_name: presetName }),
+      },
+    );
+    const data = await readAssistantResponse(response);
+    return res.status(response.status).json({
+      ...data,
       story_mode: publicStory.story_mode,
     });
   } catch (error) {
@@ -1174,6 +1435,36 @@ app.post("/api/assistant/memory/clear", requireAssistantAuth, async (req, res) =
     return res.status(response.status).json(data);
   } catch (error) {
     return sendAssistantError(res, error, "assistant/memory clear error");
+  }
+});
+
+app.post("/api/assistant/reset", requireAssistantAuth, async (req, res) => {
+  try {
+    const response = await assistantFetch(
+      `/reset/${req.assistantUser.id}`,
+      { method: "POST" },
+    );
+    const data = await readAssistantResponse(response);
+
+    if (!response.ok) {
+      return res.status(response.status).json(data);
+    }
+
+    const storyState = await resetMelissaStoryState(req.assistantUser.id);
+
+    return res.json({
+      ok: true,
+      story: buildPublicStoryState(storyState),
+      reset: {
+        memory: true,
+        chats: true,
+        chronicle: true,
+        persona: true,
+        account_stats_preserved: true,
+      },
+    });
+  } catch (error) {
+    return sendAssistantError(res, error, "assistant/reset error");
   }
 });
 

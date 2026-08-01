@@ -5,6 +5,7 @@ let currentStory = null;
 let storyWebZoom = 0.52;
 let expandedStoryNodeId = "";
 let storyPanState = null;
+let selectedPersonaPreset = "";
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
@@ -34,12 +35,22 @@ const storyFitBtn = document.getElementById("story-fit-btn");
 const storyZoomOutBtn = document.getElementById("story-zoom-out");
 const storyZoomInBtn = document.getElementById("story-zoom-in");
 const storyZoomLabel = document.getElementById("story-zoom-label");
+const companionModeStoryBtn = document.getElementById("companion-mode-story");
+const companionModePlainBtn = document.getElementById("companion-mode-plain");
+const companionModeNote = document.getElementById("companion-mode-note");
+const personaPresetPanel = document.getElementById("persona-preset-panel");
+const personaPresetList = document.getElementById("persona-preset-list");
 
 const nameEl = document.getElementById("name");
 const roleEl = document.getElementById("role");
 
 const nameInput = document.getElementById("assistant-name-input");
 const saveNameBtn = document.getElementById("save-name-btn");
+const assistantResetBtn = document.getElementById("assistant-reset-btn");
+const resetConfirmation = document.getElementById("reset-confirmation");
+const resetConfirmCheckbox = document.getElementById("reset-confirm-checkbox");
+const resetConfirmBtn = document.getElementById("reset-confirm-btn");
+const resetCancelBtn = document.getElementById("reset-cancel-btn");
 
 // вывод сообщения
 function add(role, text) {
@@ -332,6 +343,125 @@ function fitEntireStoryWeb() {
   });
 }
 
+function setModeControlsDisabled(disabled) {
+  if (companionModeStoryBtn) companionModeStoryBtn.disabled = disabled;
+  if (companionModePlainBtn) companionModePlainBtn.disabled = disabled;
+}
+
+function renderCompanionMode(story) {
+  const storyEnabled = story?.story_mode?.enabled !== false;
+
+  companionModeStoryBtn?.classList.toggle("is-selected", storyEnabled);
+  companionModePlainBtn?.classList.toggle("is-selected", !storyEnabled);
+
+  if (companionModeNote) {
+    companionModeNote.textContent = story?.story_mode?.note || (
+      storyEnabled
+        ? "Характер развивается через прожитые решения и состояние вашей связи."
+        : "Манеру общения определяет выбранный характер."
+    );
+  }
+
+  if (personaPresetPanel) {
+    personaPresetPanel.hidden = storyEnabled;
+  }
+}
+
+function renderPersonaPresets(presets, selected) {
+  if (!personaPresetList) return;
+
+  selectedPersonaPreset = String(selected || "");
+  personaPresetList.replaceChildren();
+
+  for (const preset of presets || []) {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = preset.title;
+    button.title = preset.description;
+    button.dataset.presetId = preset.id;
+    button.classList.toggle("is-selected", preset.id === selectedPersonaPreset);
+    button.addEventListener("click", () => savePersonaPreset(preset.id));
+    personaPresetList.appendChild(button);
+  }
+}
+
+async function loadPersonaPresets() {
+  if (!personaPresetList) return;
+
+  try {
+    const response = await fetch("/api/assistant/persona/presets", {
+      headers: { "Accept": "application/json" }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !Array.isArray(data.presets)) {
+      throw new Error(data.error || "Preset request failed");
+    }
+
+    renderPersonaPresets(data.presets, data.selected);
+  } catch (error) {
+    console.error("persona presets load error:", error);
+    personaPresetList.textContent = "Не удалось загрузить характеры";
+  }
+}
+
+async function savePersonaPreset(presetId) {
+  if (!personaPresetList || presetId === selectedPersonaPreset) return;
+
+  const buttons = personaPresetList.querySelectorAll("button");
+  buttons.forEach((button) => { button.disabled = true; });
+
+  try {
+    const response = await fetch("/api/assistant/preset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preset_name: presetId })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Не удалось сохранить характер");
+    }
+
+    selectedPersonaPreset = presetId;
+    buttons.forEach((button) => {
+      button.classList.toggle("is-selected", button.dataset.presetId === presetId);
+    });
+    await loadPersona();
+  } catch (error) {
+    add("assistant", error instanceof Error ? error.message : "Не удалось сохранить характер");
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
+  }
+}
+
+async function setCompanionMode(enabled) {
+  if (currentStory?.story_mode?.enabled === enabled) return;
+
+  setModeControlsDisabled(true);
+
+  try {
+    const response = await fetch("/api/assistant/story/mode", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.story) {
+      throw new Error(data.error || "Не удалось переключить режим");
+    }
+
+    renderStory(data.story);
+    await Promise.all([loadPersona(), loadPersonaPresets()]);
+  } catch (error) {
+    add("assistant", error instanceof Error ? error.message : "Не удалось переключить режим");
+  } finally {
+    setModeControlsDisabled(false);
+  }
+}
+
 function renderStory(story) {
   currentStory = story;
   const relationship = story?.relationship || {};
@@ -339,8 +469,8 @@ function renderStory(story) {
 
   if (storyModeLabel) {
     storyModeLabel.textContent = story?.story_mode?.enabled
-      ? "Активна по умолчанию"
-      : "Отключена";
+      ? "Живая история активна"
+      : "Обычный режим активен";
   }
   if (storyPathLabel) storyPathLabel.textContent = pathTitle;
   if (storySummaryMode) {
@@ -356,6 +486,7 @@ function renderStory(story) {
       `С ${relationship.autonomy || 0} · О ${relationship.caution || 0}`;
   }
 
+  renderCompanionMode(story);
   renderStoryWeb(story);
 }
 
@@ -800,6 +931,14 @@ if (storyZoomInBtn) {
   storyZoomInBtn.onclick = () => setStoryWebZoom(storyWebZoom + 0.1);
 }
 
+if (companionModeStoryBtn) {
+  companionModeStoryBtn.onclick = () => setCompanionMode(true);
+}
+
+if (companionModePlainBtn) {
+  companionModePlainBtn.onclick = () => setCompanionMode(false);
+}
+
 if (storyWebViewport) {
   storyWebViewport.addEventListener(
     "wheel",
@@ -822,6 +961,8 @@ if (storyWebViewport) {
       return;
     }
 
+    event.preventDefault();
+
     storyPanState = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -829,41 +970,54 @@ if (storyWebViewport) {
       scrollLeft: storyWebViewport.scrollLeft,
       scrollTop: storyWebViewport.scrollTop
     };
-    storyWebViewport.setPointerCapture(event.pointerId);
+    try {
+      storyWebViewport.setPointerCapture(event.pointerId);
+    } catch (error) {
+      console.debug("Pointer capture unavailable; using window drag events", error);
+    }
     storyWebViewport.classList.add("is-panning");
   });
 
-  storyWebViewport.addEventListener("pointermove", (event) => {
+  const moveStoryPan = (event) => {
     if (!storyPanState || storyPanState.pointerId !== event.pointerId) {
       return;
     }
+
+    event.preventDefault();
 
     storyWebViewport.scrollLeft =
       storyPanState.scrollLeft - (event.clientX - storyPanState.startX);
     storyWebViewport.scrollTop =
       storyPanState.scrollTop - (event.clientY - storyPanState.startY);
-  });
+  };
 
   const finishStoryPan = (event) => {
     if (!storyPanState || storyPanState.pointerId !== event.pointerId) {
       return;
     }
 
-    if (storyWebViewport.hasPointerCapture(event.pointerId)) {
-      storyWebViewport.releasePointerCapture(event.pointerId);
+    try {
+      if (storyWebViewport.hasPointerCapture(event.pointerId)) {
+        storyWebViewport.releasePointerCapture(event.pointerId);
+      }
+    } catch (error) {
+      console.debug("Pointer capture already released", error);
     }
 
     storyPanState = null;
     storyWebViewport.classList.remove("is-panning");
   };
 
-  storyWebViewport.addEventListener("pointerup", finishStoryPan);
-  storyWebViewport.addEventListener("pointercancel", finishStoryPan);
+  window.addEventListener("pointermove", moveStoryPan, { passive: false });
+  window.addEventListener("pointerup", finishStoryPan);
+  window.addEventListener("pointercancel", finishStoryPan);
 }
 
 if (memoryClearBtn) {
   memoryClearBtn.onclick = async () => {
-    const confirmed = confirm("Вы уверены? Это удалит всю память ассистента о вас.");
+    const confirmed = confirm(
+      "Удалить все сохранённые факты о вас? Диалоги и Хроника связи останутся без изменений."
+    );
     if (!confirmed) return;
 
     memoryClearBtn.disabled = true;
@@ -881,6 +1035,69 @@ if (memoryClearBtn) {
       await loadMemory();
     } finally {
       memoryClearBtn.disabled = false;
+    }
+  };
+}
+
+function closeResetConfirmation() {
+  if (!resetConfirmation) return;
+  resetConfirmation.hidden = true;
+  if (resetConfirmCheckbox) resetConfirmCheckbox.checked = false;
+  if (resetConfirmBtn) resetConfirmBtn.disabled = true;
+}
+
+if (assistantResetBtn) {
+  assistantResetBtn.onclick = () => {
+    if (!resetConfirmation) return;
+    resetConfirmation.hidden = false;
+    resetConfirmation.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+}
+
+if (resetCancelBtn) {
+  resetCancelBtn.onclick = closeResetConfirmation;
+}
+
+if (resetConfirmCheckbox && resetConfirmBtn) {
+  resetConfirmCheckbox.onchange = () => {
+    resetConfirmBtn.disabled = !resetConfirmCheckbox.checked;
+  };
+}
+
+if (resetConfirmBtn) {
+  resetConfirmBtn.onclick = async () => {
+    if (!resetConfirmCheckbox?.checked) return;
+
+    resetConfirmBtn.disabled = true;
+    if (assistantResetBtn) assistantResetBtn.disabled = true;
+
+    try {
+      const response = await fetch("/api/assistant/reset", {
+        method: "POST"
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.story) {
+        throw new Error(data.error || "Не удалось начать заново");
+      }
+
+      session_id = 0;
+      sessionEl.textContent = "0";
+      messages.replaceChildren();
+      renderStory(data.story);
+      closeResetConfirmation();
+      await Promise.all([
+        loadMemory(),
+        loadMemoryItems(),
+        loadPersona(),
+        loadPersonaPresets()
+      ]);
+      add("assistant", "Начинаем заново. Я слышу тебя — остальное пока белый шум.");
+    } catch (error) {
+      add("assistant", error instanceof Error ? error.message : "Не удалось начать заново");
+      resetConfirmBtn.disabled = false;
+    } finally {
+      if (assistantResetBtn) assistantResetBtn.disabled = false;
     }
   };
 }
@@ -988,8 +1205,9 @@ if (memoryItemsEl) {
 // старт
 (async function init() {
   try {
-    await loadUser();      // ← ДОБАВИЛИ
+    await loadUser();
     await loadPersona();
+    await loadPersonaPresets();
     await loadMemory();
     await loadMemoryItems();
     await loadMessages();

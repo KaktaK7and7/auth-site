@@ -36,6 +36,7 @@ const {
   buildCapabilityContext,
 } = require("./lib/activity-context");
 const { validateScreenshotDataUrl } = require("./lib/screenshot");
+const { normalizeDrawingRequest } = require("./lib/drawing-request");
 require("dotenv").config();
 const app = express();
 
@@ -149,6 +150,16 @@ const visionApiLimiter = rateLimit({
   legacyHeaders: false,
   handler: (_req, res) => res.status(429).json({
     error: "Слишком много запросов анализа экрана. Попробуйте немного позже.",
+  }),
+});
+
+const drawingApiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 8,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    error: "Лимит рисунков на этот час исчерпан. Попробуйте позже.",
   }),
 });
 
@@ -809,6 +820,7 @@ async function requireAssistantAuth(req, res, next) {
   try {
     if (req.session?.user) {
       req.assistantUser = req.session.user;
+      req.assistantClientType = "web";
       return next();
     }
 
@@ -819,6 +831,7 @@ async function requireAssistantAuth(req, res, next) {
     }
 
     req.assistantUser = desktopUser;
+    req.assistantClientType = "desktop";
     return next();
   } catch (error) {
     console.error("assistant auth error:", error);
@@ -827,7 +840,7 @@ async function requireAssistantAuth(req, res, next) {
 }
 
 
-async function assistantFetch(servicePath, options = {}) {
+async function assistantFetch(servicePath, options = {}, timeoutMs = 60_000) {
   if (!AI_SERVICE_URL || !AI_INTERNAL_TOKEN) {
     const error = new Error("AI service gateway is not configured");
     error.code = "AI_SERVICE_MISCONFIGURED";
@@ -837,7 +850,7 @@ async function assistantFetch(servicePath, options = {}) {
   const baseUrl = AI_SERVICE_URL.replace(/\/+$/, "");
   const normalizedPath = String(servicePath).replace(/^\/+/, "");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(`${baseUrl}/${normalizedPath}`, {
@@ -1152,6 +1165,7 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
           : null,
         activity_context: buildActivityContext(activityEvents),
         capability_context: buildCapabilityContext(capabilities),
+        drawing_enabled: req.assistantClientType === "desktop",
       }),
     });
     const data = await readAssistantResponse(response);
@@ -1199,6 +1213,44 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
     return sendAssistantError(res, error, "assistant/chat error");
   }
 });
+
+app.post(
+  "/api/assistant/drawings/generate",
+  requireAssistantAuth,
+  drawingApiLimiter,
+  async (req, res) => {
+    try {
+      const drawingRequest = normalizeDrawingRequest(req.body);
+
+      if (!drawingRequest) {
+        return res.status(400).json({
+          error: "Некорректное задание на рисунок",
+        });
+      }
+
+      const response = await assistantFetch(
+        "/drawings/generate",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: req.assistantUser.id,
+            ...drawingRequest,
+          }),
+        },
+        120_000,
+      );
+      const data = await readAssistantResponse(response);
+      return res.status(response.status).json(data);
+    } catch (error) {
+      return sendAssistantError(
+        res,
+        error,
+        "assistant/drawings/generate error",
+      );
+    }
+  },
+);
 
 app.post(
   "/api/assistant/vision",

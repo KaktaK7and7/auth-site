@@ -41,6 +41,11 @@ test("assistant page owns Melissa details and personalized chat entry points", (
   assert.match(assistant, /2045 года/);
   assert.match(assistant, /Ветки не[\s\S]*сходятся обратно/);
   assert.match(assistant, /Доверие, близость, самостоятельность/);
+  assert.match(assistant, /id="vision"/);
+  assert.match(assistant, /Перевести видимый текст/);
+  assert.match(assistant, /Разобрать ошибку или интерфейс/);
+  assert.match(assistant, /Это не постоянное наблюдение/);
+  assert.match(assistant, /не добавляется в память компаньона/);
 });
 
 

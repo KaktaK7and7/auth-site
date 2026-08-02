@@ -24,9 +24,11 @@ const {
   buildPublicStoryState,
   buildStoryContext,
   createInitialStoryState,
+  inferStorySignalFromMessage,
   normalizeCompanionName,
   normalizeStorySignal,
   normalizeStoryState,
+  recordStoryTurn,
   setStoryMode,
 } = require("./lib/melissa-story");
 const {
@@ -701,6 +703,42 @@ async function applyStorySignalSafely(userId, rawSignal) {
   }
 }
 
+async function recordMelissaStoryConversationTurn(userId) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await ensureMelissaStoryState(userId, client);
+    const lockedResult = await client.query(
+      `
+      SELECT state
+      FROM melissa_story_states
+      WHERE user_id = $1
+      FOR UPDATE
+      `,
+      [userId],
+    );
+    const currentState = normalizeStoryState(lockedResult.rows[0]?.state);
+    const updatedState = recordStoryTurn(currentState);
+
+    await client.query(
+      `
+      UPDATE melissa_story_states
+      SET state = $2::jsonb, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1
+      `,
+      [userId, JSON.stringify(updatedState)],
+    );
+    await client.query("COMMIT");
+    return updatedState;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 async function updateMelissaStoryCompanionName(userId, name) {
   const state = await ensureMelissaStoryState(userId);
   const updatedState = {
@@ -1118,19 +1156,37 @@ app.post("/api/assistant/chat", requireAssistantAuth, async (req, res) => {
     });
     const data = await readAssistantResponse(response);
 
-    if (
-      response.ok
-      && storyState.story_mode_enabled
-      && data?.story_signal
-    ) {
-      const updatedState = await applyStorySignalSafely(
-        req.assistantUser.id,
-        data.story_signal,
-      );
+    if (response.ok && storyState.story_mode_enabled && data) {
+      let updatedState = data.story_signal
+        ? await applyStorySignalSafely(
+            req.assistantUser.id,
+            data.story_signal,
+          )
+        : null;
+
+      if (!updatedState) {
+        const inferredSignal = inferStorySignalFromMessage(
+          storyState,
+          normalizedMessage,
+        );
+
+        if (inferredSignal) {
+          updatedState = await applyStorySignalSafely(
+            req.assistantUser.id,
+            inferredSignal,
+          );
+        }
+      }
 
       if (updatedState) {
         data.story_updated = true;
         data.story = buildPublicStoryState(updatedState);
+      } else {
+        const momentumState = await recordMelissaStoryConversationTurn(
+          req.assistantUser.id,
+        );
+        data.story_momentum_updated = true;
+        data.story = buildPublicStoryState(momentumState);
       }
     }
 

@@ -7,6 +7,9 @@ let expandedStoryNodeId = "";
 let storyPanState = null;
 let selectedPersonaPreset = "";
 
+const STORY_WEB_PADDING = 240;
+const STORY_FOCUS_ZOOM = 0.82;
+
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
@@ -24,9 +27,17 @@ const storyModal = document.getElementById("story-modal");
 const storyModalClose = document.getElementById("story-modal-close");
 const storyModeLabel = document.getElementById("story-mode-label");
 const storyPathLabel = document.getElementById("story-path-label");
+const storyNextLabel = document.getElementById("story-next-label");
 const storySummaryMode = document.getElementById("story-summary-mode");
 const storySummaryPath = document.getElementById("story-summary-path");
 const storySummaryLink = document.getElementById("story-summary-link");
+const storyGuidance = document.getElementById("story-guidance");
+const storyGuidanceStep = document.getElementById("story-guidance-step");
+const storyGuidanceTitle = document.getElementById("story-guidance-title");
+const storyGuidanceStatus = document.getElementById("story-guidance-status");
+const storyGuidanceObjective = document.getElementById("story-guidance-objective");
+const storyGuidanceWhy = document.getElementById("story-guidance-why");
+const storyGuidanceSuggestions = document.getElementById("story-guidance-suggestions");
 const storyWeb = document.getElementById("story-web");
 const storyWebViewport = document.getElementById("story-web-viewport");
 const storyNodeInspector = document.getElementById("story-node-inspector");
@@ -129,19 +140,30 @@ function clampStoryWebZoom(value) {
   return Math.min(1.2, Math.max(0.18, value));
 }
 
+function getStoryWebDimensions(story = currentStory) {
+  const graphWidth = Number(story?.graph?.width) || 2840;
+  const graphHeight = Number(story?.graph?.height) || 3360;
+
+  return {
+    graphWidth,
+    graphHeight,
+    stageWidth: graphWidth + STORY_WEB_PADDING * 2,
+    stageHeight: graphHeight + STORY_WEB_PADDING * 2,
+  };
+}
+
 function syncStoryWebScale() {
   if (!storyWeb || !currentStory?.graph) return;
 
-  const width = Number(currentStory.graph.width) || 2840;
-  const height = Number(currentStory.graph.height) || 3360;
+  const { stageWidth, stageHeight } = getStoryWebDimensions();
   const canvas = storyWeb.querySelector(".story-web__canvas");
 
-  storyWeb.style.width = `${width * storyWebZoom}px`;
-  storyWeb.style.height = `${height * storyWebZoom}px`;
+  storyWeb.style.width = `${stageWidth * storyWebZoom}px`;
+  storyWeb.style.height = `${stageHeight * storyWebZoom}px`;
 
   if (canvas) {
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    canvas.style.width = `${stageWidth}px`;
+    canvas.style.height = `${stageHeight}px`;
     canvas.style.transform = `scale(${storyWebZoom})`;
   }
 
@@ -203,8 +225,7 @@ function renderStoryInspector(node) {
 function renderStoryWeb(story) {
   if (!storyWeb || !story?.graph || !Array.isArray(story.nodes)) return;
 
-  const width = Number(story.graph.width) || 2840;
-  const height = Number(story.graph.height) || 3360;
+  const { stageWidth, stageHeight } = getStoryWebDimensions(story);
   const nodeWidth = 190;
   const nodeHeight = 84;
   const nodesById = new Map(story.nodes.map((node) => [node.id, node]));
@@ -213,10 +234,10 @@ function renderStoryWeb(story) {
   const svg = document.createElementNS(svgNamespace, "svg");
 
   canvas.className = "story-web__canvas";
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
+  canvas.style.width = `${stageWidth}px`;
+  canvas.style.height = `${stageHeight}px`;
   canvas.style.transform = `scale(${storyWebZoom})`;
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("viewBox", `0 0 ${stageWidth} ${stageHeight}`);
   svg.setAttribute("aria-hidden", "true");
 
   for (const node of story.nodes) {
@@ -225,10 +246,10 @@ function renderStoryWeb(story) {
       if (!parent) continue;
 
       const path = document.createElementNS(svgNamespace, "path");
-      const startX = Number(parent.x) + nodeWidth;
-      const startY = Number(parent.y) + nodeHeight / 2;
-      const endX = Number(node.x);
-      const endY = Number(node.y) + nodeHeight / 2;
+      const startX = Number(parent.x) + STORY_WEB_PADDING + nodeWidth;
+      const startY = Number(parent.y) + STORY_WEB_PADDING + nodeHeight / 2;
+      const endX = Number(node.x) + STORY_WEB_PADDING;
+      const endY = Number(node.y) + STORY_WEB_PADDING + nodeHeight / 2;
       const bend = Math.max(50, (endX - startX) * 0.48);
 
       path.setAttribute(
@@ -255,8 +276,8 @@ function renderStoryWeb(story) {
 
     button.type = "button";
     button.className = `story-web__node is-${node.status || "hidden"}`;
-    button.style.left = `${Number(node.x) || 0}px`;
-    button.style.top = `${Number(node.y) || 0}px`;
+    button.style.left = `${(Number(node.x) || 0) + STORY_WEB_PADDING}px`;
+    button.style.top = `${(Number(node.y) || 0) + STORY_WEB_PADDING}px`;
     button.dataset.storyNodeId = node.id;
     button.setAttribute("aria-label", `${node.title}. ${node.subtitle}`);
     if (node.id === story.current_node_id) {
@@ -305,30 +326,35 @@ function focusCurrentStoryNode() {
   const node = getStoryNode(currentStory, currentStory.current_node_id);
   if (!node) return;
 
-  storyWebViewport.scrollTo({
-    left: Math.max(
-      0,
-      (Number(node.x) + 95) * storyWebZoom
-        - storyWebViewport.clientWidth / 2
-    ),
-    top: Math.max(
-      0,
-      (Number(node.y) + 42) * storyWebZoom
-        - storyWebViewport.clientHeight / 2
-    ),
-    behavior: "smooth"
+  storyWebZoom = Math.max(storyWebZoom, STORY_FOCUS_ZOOM);
+  expandedStoryNodeId = node.id;
+  renderStoryWeb(currentStory);
+
+  requestAnimationFrame(() => {
+    storyWebViewport.scrollTo({
+      left: Math.max(
+        0,
+        (Number(node.x) + STORY_WEB_PADDING + 180) * storyWebZoom
+          - storyWebViewport.clientWidth / 2
+      ),
+      top: Math.max(
+        0,
+        (Number(node.y) + STORY_WEB_PADDING + 88) * storyWebZoom
+          - storyWebViewport.clientHeight / 2
+      ),
+      behavior: "smooth"
+    });
   });
 }
 
 function fitEntireStoryWeb() {
   if (!storyWebViewport || !currentStory?.graph) return;
 
-  const width = Number(currentStory.graph.width) || 2840;
-  const height = Number(currentStory.graph.height) || 3360;
+  const { stageWidth, stageHeight } = getStoryWebDimensions();
   const nextZoom = clampStoryWebZoom(
     Math.min(
-      (storyWebViewport.clientWidth - 28) / width,
-      (storyWebViewport.clientHeight - 28) / height
+      (storyWebViewport.clientWidth - 28) / stageWidth,
+      (storyWebViewport.clientHeight - 28) / stageHeight
     )
   );
 
@@ -341,6 +367,41 @@ function fitEntireStoryWeb() {
       behavior: "smooth"
     });
   });
+}
+
+function renderStoryGuidance(story) {
+  const guidance = story?.guidance;
+
+  if (!guidance) {
+    if (storyNextLabel) storyNextLabel.textContent = "Продолжайте разговор";
+    return;
+  }
+
+  if (storyNextLabel) storyNextLabel.textContent = guidance.title;
+  if (storyGuidanceStep) {
+    storyGuidanceStep.textContent = guidance.status === "open_world"
+      ? "СВОБОДНОЕ РАЗВИТИЕ"
+      : `ШАГ ${guidance.step || 1} ИЗ ${guidance.total_steps || 4}`;
+  }
+  if (storyGuidanceTitle) storyGuidanceTitle.textContent = guidance.title;
+  if (storyGuidanceObjective) {
+    storyGuidanceObjective.textContent = guidance.objective;
+  }
+  if (storyGuidanceWhy) storyGuidanceWhy.textContent = guidance.why;
+  if (storyGuidanceStatus) {
+    storyGuidanceStatus.textContent = guidance.stalled
+      ? "Разговор остановился. Теперь Мелисса должна сама предложить конкретное действие или потребовать решение."
+      : guidance.completion_rule;
+  }
+  if (storyGuidanceSuggestions) {
+    storyGuidanceSuggestions.replaceChildren();
+    for (const suggestion of guidance.suggestions || []) {
+      const item = document.createElement("li");
+      item.textContent = suggestion;
+      storyGuidanceSuggestions.appendChild(item);
+    }
+  }
+  storyGuidance?.classList.toggle("is-stalled", Boolean(guidance.stalled));
 }
 
 function setModeControlsDisabled(disabled) {
@@ -487,6 +548,7 @@ function renderStory(story) {
   }
 
   renderCompanionMode(story);
+  renderStoryGuidance(story);
   renderStoryWeb(story);
 }
 
@@ -840,7 +902,9 @@ async function send(msg) {
 
   loadMemory();
   loadMemoryItems();
-  if (d.story_updated) {
+  if (d.story) {
+    renderStory(d.story);
+  } else if (d.story_updated || d.story_momentum_updated) {
     loadStory();
   }
 }

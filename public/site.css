@@ -901,6 +901,104 @@ a {
   line-height: 1.6;
 }
 
+.screen-vision {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(34px, 6vw, 84px);
+  align-items: start;
+}
+
+.screen-vision__copy {
+  position: sticky;
+  top: 116px;
+}
+
+.screen-vision__copy h2 {
+  margin: 12px 0 0;
+  font-size: clamp(40px, 5.5vw, 70px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.screen-vision__copy > p {
+  margin: 22px 0 0;
+  color: #aebccd;
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.screen-vision__privacy {
+  margin-top: 28px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(69, 255, 154, 0.18);
+  border-radius: 18px;
+  background: rgba(69, 255, 154, 0.045);
+}
+
+.screen-vision__privacy > span,
+.screen-vision__tasks article > span {
+  color: var(--site-cyan);
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+}
+
+.screen-vision__privacy strong {
+  font-size: 17px;
+}
+
+.screen-vision__privacy p {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.screen-vision__tasks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.screen-vision__tasks article {
+  min-height: 250px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--site-border);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(0, 245, 255, 0.055), transparent 52%),
+    var(--site-panel);
+  box-shadow: var(--site-shadow);
+}
+
+.screen-vision__tasks article:nth-child(2n) > span {
+  color: #c99bff;
+}
+
+.screen-vision__tasks h3 {
+  margin: 32px 0 10px;
+  font-size: 22px;
+  line-height: 1.18;
+}
+
+.screen-vision__tasks p {
+  margin: 0;
+  color: var(--site-muted);
+  line-height: 1.65;
+}
+
+.screen-vision__tasks small {
+  margin-top: auto;
+  padding-top: 20px;
+  color: #d7e6f2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .site-system {
   display: grid;
   grid-template-columns: 0.86fr 1.14fr;
@@ -2357,6 +2455,14 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .screen-vision {
+    grid-template-columns: 1fr;
+  }
+
+  .screen-vision__copy {
+    position: static;
+  }
+
   .feedback-banner {
     gap: 24px;
   }
@@ -2420,6 +2526,10 @@ a {
 @media (max-width: 620px) {
   .site-container {
     width: min(100% - 28px, var(--site-container));
+  }
+
+  .screen-vision__tasks {
+    grid-template-columns: 1fr;
   }
 
   .site-nav {

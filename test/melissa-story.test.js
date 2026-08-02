@@ -6,8 +6,10 @@ const {
   buildPublicStoryState,
   buildStoryContext,
   createInitialStoryState,
+  inferStorySignalFromMessage,
   normalizeStorySignal,
   normalizeStoryState,
+  recordStoryTurn,
   setStoryMode,
 } = require("../lib/melissa-story");
 
@@ -15,13 +17,17 @@ const {
 test("living story is enabled by default and starts at the first fork", () => {
   const publicState = buildPublicStoryState(createInitialStoryState());
 
-  assert.equal(publicState.version, 3);
+  assert.equal(publicState.version, 4);
   assert.equal(publicState.story_mode.enabled, true);
   assert.equal(publicState.story_mode.character_locked, true);
   assert.equal(publicState.story_mode.personality_source, "living_story");
   assert.equal(publicState.prologue.next_prompt.id, "first_contact");
   assert.equal(publicState.path.id, "unformed");
   assert.equal(publicState.graph.layout, "relationship-web");
+  assert.equal(publicState.guidance.status, "active");
+  assert.equal(publicState.guidance.step, 1);
+  assert.equal(publicState.guidance.melissa_leads, true);
+  assert.match(publicState.guidance.objective, /искать ответы вместе/i);
   assert.ok(publicState.graph.height >= 2000);
   assert.ok(publicState.nodes.length >= 45);
   const nodeIds = new Set(publicState.nodes.map((node) => node.id));
@@ -304,7 +310,7 @@ test("version 2 linear saves migrate into route-specific branches", () => {
     },
   });
 
-  assert.equal(migrated.version, 3);
+  assert.equal(migrated.version, 4);
   assert.equal(migrated.story_mode_enabled, true);
   assert.equal(migrated.route, "verification");
   assert.equal(
@@ -402,4 +408,80 @@ test("dialogue story signals require valid ids and high confidence", () => {
     }),
     null,
   );
+});
+
+
+test("ordinary dialogue can advance the current story fork without a magic phrase", () => {
+  const state = createInitialStoryState();
+
+  assert.deepEqual(
+    inferStorySignalFromMessage(
+      state,
+      "Мне кажется, мы могли бы познакомиться и помогать друг другу",
+    ),
+    {
+      choice_id: "first_contact",
+      option_id: "together",
+      confidence: 0.96,
+      custom_name: "",
+    },
+  );
+  assert.equal(
+    inferStorySignalFromMessage(state, "Кто ты и как здесь оказалась?"),
+    null,
+  );
+});
+
+
+test("dialogue inference only considers the currently available fork", () => {
+  const state = applyStoryChoice(
+    createInitialStoryState(),
+    "first_contact",
+    "explain_first",
+  ).state;
+
+  assert.deepEqual(
+    inferStorySignalFromMessage(
+      state,
+      "Давай пока просто поговорим, без доступа к данным",
+    ),
+    {
+      choice_id: "verification_protocol",
+      option_id: "questions_only",
+      confidence: 0.86,
+      custom_name: "",
+    },
+  );
+});
+
+
+test("custom name is extracted only on the naming fork", () => {
+  let state = createInitialStoryState();
+  state = applyStoryChoice(state, "first_contact", "together").state;
+  state = applyStoryChoice(state, "alliance_terms", "shared_rules").state;
+
+  assert.deepEqual(
+    inferStorySignalFromMessage(state, "Тогда я буду звать тебя Искра"),
+    {
+      choice_id: "temporary_name",
+      option_id: "custom_name",
+      confidence: 0.94,
+      custom_name: "Искра",
+    },
+  );
+});
+
+
+test("story momentum becomes visible and resets after a real decision", () => {
+  let state = createInitialStoryState();
+  state = recordStoryTurn(recordStoryTurn(state));
+
+  const stalled = buildPublicStoryState(state);
+  assert.equal(stalled.guidance.stalled, true);
+  assert.equal(stalled.guidance.turns_since_progress, 2);
+
+  state = applyStoryChoice(state, "first_contact", "together").state;
+  const progressed = buildPublicStoryState(state);
+  assert.equal(progressed.guidance.stalled, false);
+  assert.equal(progressed.guidance.turns_since_progress, 0);
 });

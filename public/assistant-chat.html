@@ -83,6 +83,8 @@
       <div class="story-mode-card__path">
         <small>ТЕКУЩИЙ ПУТЬ</small>
         <strong id="story-path-label">Загрузка...</strong>
+        <small class="story-mode-card__next-label">ЧТО ДЕЛАТЬ СЕЙЧАС</small>
+        <strong class="story-mode-card__next" id="story-next-label">Открываю текущую задачу...</strong>
       </div>
       <button id="story-open-btn" type="button">Открыть Хронику связи</button>
     </div>
@@ -122,6 +124,24 @@
         <strong id="story-summary-link">Формируется</strong>
       </div>
     </div>
+
+    <section class="story-guidance" id="story-guidance" aria-live="polite">
+      <div class="story-guidance__heading">
+        <span id="story-guidance-step">ТЕКУЩАЯ ЗАДАЧА</span>
+        <strong id="story-guidance-title">Загрузка...</strong>
+        <small id="story-guidance-status"></small>
+      </div>
+      <div class="story-guidance__objective">
+        <p id="story-guidance-objective">
+          Здесь появится конкретная цель текущего разговора.
+        </p>
+        <small id="story-guidance-why"></small>
+      </div>
+      <div class="story-guidance__examples">
+        <span>МОЖНО НАЧАТЬ ТАК</span>
+        <ul id="story-guidance-suggestions"></ul>
+      </div>
+    </section>
 
     <div class="story-web-shell">
       <div class="story-web-toolbar">

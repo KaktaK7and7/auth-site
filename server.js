@@ -37,6 +37,9 @@ const {
 } = require("./lib/activity-context");
 const { validateScreenshotDataUrl } = require("./lib/screenshot");
 const { normalizeDrawingRequest } = require("./lib/drawing-request");
+const {
+  normalizeScreenAnalysisResponse,
+} = require("./lib/screen-analysis");
 require("dotenv").config();
 const app = express();
 
@@ -1314,6 +1317,17 @@ app.post(
         }),
       });
       const data = await readAssistantResponse(response);
+
+      if (response.ok) {
+        const normalized = normalizeScreenAnalysisResponse(data);
+        if (!normalized) {
+          return res.status(502).json({
+            error: "Некорректный ответ анализа экрана",
+          });
+        }
+        return res.status(response.status).json(normalized);
+      }
+
       return res.status(response.status).json(data);
     } catch (error) {
       return sendAssistantError(res, error, "assistant/vision error");

@@ -1319,7 +1319,7 @@ app.post(
       const data = await readAssistantResponse(response);
 
       if (response.ok) {
-        const normalized = normalizeScreenAnalysisResponse(data);
+        const normalized = normalizeScreenAnalysisResponse(data, { message });
         if (!normalized) {
           return res.status(502).json({
             error: "Некорректный ответ анализа экрана",

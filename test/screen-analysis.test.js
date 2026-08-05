@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+  MIN_TARGET_CONFIDENCE,
   normalizeScreenAnalysisResponse,
 } = require("../lib/screen-analysis");
 
@@ -33,6 +34,7 @@ test("screen analysis keeps bounded annotations and a linked safe click", () => 
   });
 
   assert.equal(normalized.annotations[0].width, 0.25);
+  assert.equal(normalized.annotations[0].confidence, 1);
   assert.equal(normalized.action.type, "click");
   assert.equal(normalized.action.target_id, "next");
   assert.equal(normalized.action.x, undefined);
@@ -181,4 +183,106 @@ test("screen analysis never clicks an oversized target", () => {
 
   assert.equal(normalized.action.type, "none");
   assert.equal(normalized.action.risk, "blocked");
+});
+
+
+test("low-confidence target is preserved for retry but cannot become a click", () => {
+  const normalized = normalizeScreenAnalysisResponse({
+    answer: "Вижу вероятную кнопку.",
+    session_id: 11,
+    mode: "annotate",
+    annotations: [{
+      id: "assistant",
+      label: "Ассистент",
+      kind: "target",
+      x: 0.55,
+      y: 0.08,
+      width: 0.32,
+      height: 0.18,
+      step: 0,
+      confidence: MIN_TARGET_CONFIDENCE - 0.01,
+    }],
+    action: {
+      type: "click",
+      target_id: "assistant",
+      label: "Ассистент",
+      risk: "safe",
+      reason: "",
+    },
+  }, {
+    message: "нажми кнопку ассистент",
+  });
+
+  assert.equal(normalized.annotations.length, 1);
+  assert.equal(
+    normalized.annotations[0].confidence,
+    MIN_TARGET_CONFIDENCE - 0.01,
+  );
+  assert.equal(normalized.action.type, "none");
+  assert.equal(normalized.action.risk, "blocked");
+});
+
+
+test("lexical mismatch lowers confidence and blocks the wrong target", () => {
+  const normalized = normalizeScreenAnalysisResponse({
+    answer: "Вот кнопка.",
+    session_id: 12,
+    mode: "guide",
+    annotations: [{
+      id: "community",
+      label: "Сообщество",
+      kind: "target",
+      x: 0.4,
+      y: 0.1,
+      width: 0.1,
+      height: 0.05,
+      step: 0,
+      confidence: 0.95,
+    }],
+    action: {
+      type: "click",
+      target_id: "community",
+      label: "Ассистент",
+      risk: "safe",
+      reason: "",
+    },
+  }, {
+    message: "нажми кнопку ассистент",
+  });
+
+  assert.equal(normalized.annotations[0].confidence, 0);
+  assert.equal(normalized.action.type, "none");
+});
+
+
+test("matching target keeps upstream confidence and safe action", () => {
+  const normalized = normalizeScreenAnalysisResponse({
+    answer: "Нажимаю.",
+    session_id: 13,
+    mode: "guide",
+    annotations: [{
+      id: "assistant",
+      label: "Кнопка Ассистент",
+      kind: "target",
+      x: 0.6,
+      y: 0.1,
+      width: 0.09,
+      height: 0.05,
+      step: 0,
+      confidence: 0.92,
+    }],
+    action: {
+      type: "click",
+      target_id: "assistant",
+      label: "Ассистент",
+      risk: "safe",
+      reason: "",
+    },
+  }, {
+    message: "нажми кнопку ассистент",
+  });
+
+  assert.equal(normalized.annotations[0].confidence, 0.92);
+  assert.equal(normalized.action.type, "click");
+  assert.equal(normalized.action.target_id, "assistant");
 });

@@ -78,6 +78,16 @@
   accent-color: var(--site-cyan);
 }
 
+/* На личном профиле действие должно называться коротко: «Друзья». */
+.profile-social-card a[href="/friends.html"] {
+  font-size: 0;
+}
+
+.profile-social-card a[href="/friends.html"]::after {
+  content: "Друзья";
+  font-size: 13px;
+}
+
 @media (max-width: 640px) {
   .profile-social-grid {
     grid-template-columns: 1fr;

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Сообщения — Ziren Network</title>
+    <meta name="description" content="Личные чаты и группы Ziren Network." />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/network.css" />
+  </head>
+  <body data-network-page="messages">
+    <header class="site-header">
+      <div class="site-container site-nav">
+        <a class="site-brand" href="/">
+          <img src="/images/Ziren.png" alt="" />
+          <span>ZIREN <small>MESSENGER</small></span>
+        </a>
+        <button class="site-nav__toggle" type="button" aria-label="Открыть меню" aria-expanded="false" data-nav-toggle>☰</button>
+        <nav class="site-nav__links" data-nav-links>
+          <a href="/">Главная</a>
+          <a href="/assistant.html">Ассистент</a>
+          <a href="/friends.html">Друзья</a>
+          <a href="/messages.html" aria-current="page">Сообщения</a>
+          <a href="/profile">Профиль</a>
+        </nav>
+        <div class="site-nav__actions" data-auth-container></div>
+      </div>
+    </header>
+
+    <main class="network-shell">
+      <div class="site-container network-layout">
+        <aside class="network-sidebar">
+          <span class="network-kicker">ZIREN NETWORK</span>
+          <h2>Сообщения</h2>
+          <p>Личные диалоги и группы синхронизированы с приложением Ziren.</p>
+          <nav class="network-nav">
+            <a href="/friends.html">Друзья <span data-friend-count>0</span></a>
+            <a href="/messages.html" aria-current="page">Сообщения <span data-total-unread>0</span></a>
+            <button type="button" data-create-group-open>+ Создать группу</button>
+          </nav>
+        </aside>
+
+        <div class="network-main">
+          <section class="network-panel" style="padding:0; overflow:hidden">
+            <div class="network-messenger">
+              <aside class="network-threads">
+                <div class="network-threads__head">
+                  <span class="network-kicker">CHATS</span>
+                  <h2>Диалоги</h2>
+                </div>
+                <div class="network-thread-list">
+                  <div class="network-thread-section" data-direct-thread-list></div>
+                  <div class="network-thread-section" data-group-thread-list></div>
+                </div>
+              </aside>
+
+              <section class="network-chat" data-chat-pane>
+                <div class="network-empty">
+                  <div>
+                    <span class="network-kicker">ZIREN MESSENGER</span>
+                    <h2>Выбери диалог</h2>
+                    <p class="network-muted">Или создай группу и добавь туда друзей.</p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <div class="network-status" data-network-status hidden></div>
+        </div>
+      </div>
+    </main>
+
+    <div class="network-modal" data-group-modal hidden>
+      <div class="network-modal__card">
+        <div class="network-panel__head">
+          <div>
+            <span class="network-kicker">NEW GROUP</span>
+            <h2>Создать группу</h2>
+          </div>
+          <button class="network-icon-button network-button--ghost" type="button" data-create-group-close>×</button>
+        </div>
+        <form class="network-form" data-create-group-form>
+          <input class="network-input" name="name" maxlength="80" required placeholder="Название группы" />
+          <textarea class="network-textarea" name="description" maxlength="280" placeholder="Описание — необязательно"></textarea>
+          <div>
+            <strong>Добавить друзей</strong>
+            <p class="network-muted">В группу можно добавить только пользователей из твоего списка друзей.</p>
+            <div class="network-member-picker" data-group-member-picker></div>
+          </div>
+          <div class="network-actions">
+            <button class="network-button" type="submit">Создать группу</button>
+            <button class="network-button network-button--ghost" type="button" data-create-group-close>Отмена</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/site.js" defer></script>
+    <script src="/network.js" defer></script>
+  </body>
+</html>

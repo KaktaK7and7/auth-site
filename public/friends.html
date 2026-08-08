@@ -45,14 +45,31 @@
           <section class="network-panel">
             <div class="network-panel__head">
               <div>
+                <span class="network-kicker">YOUR FRIEND CODE</span>
+                <h2>Твой код для добавления</h2>
+              </div>
+            </div>
+            <div class="network-search" style="align-items:center">
+              <div>
+                <strong data-friend-code style="font:900 20px ui-monospace,monospace;letter-spacing:.08em">Загрузка…</strong>
+                <p class="network-muted" style="margin:6px 0 0">Код постоянный. Его можно отправить человеку — войти в аккаунт или получить доступ к данным по нему нельзя.</p>
+              </div>
+              <button class="network-button network-button--ghost" type="button" data-copy-friend-code>Копировать</button>
+            </div>
+          </section>
+
+          <section class="network-panel">
+            <div class="network-panel__head">
+              <div>
                 <span class="network-kicker">DISCOVERY</span>
                 <h2>Найти пользователя</h2>
               </div>
             </div>
             <div class="network-search">
-              <input class="network-input" type="search" maxlength="64" placeholder="Ник пользователя" data-user-search />
+              <input class="network-input" type="search" maxlength="64" placeholder="Ник или код ZR-XXXXXX" data-user-search />
               <button class="network-button" type="button" data-user-search-button>Найти</button>
             </div>
+            <p class="network-muted" style="margin:9px 0 0">Можно искать как по нику, так и по уникальному коду пользователя.</p>
             <div class="network-list" data-user-search-results></div>
           </section>
 
@@ -96,5 +113,6 @@
 
     <script src="/site.js" defer></script>
     <script src="/network.js" defer></script>
+    <script src="/network-enhance.js" defer></script>
   </body>
 </html>

@@ -454,7 +454,27 @@ async function loadPublicProfileFriends() {
   }
 }
 
+function ensureProfileSocialStyles() {
+  const profilePath = window.location.pathname === "/profile";
+  const publicProfilePath = /^\/community\/\d+\/?$/.test(window.location.pathname);
+
+  if (!profilePath && !publicProfilePath) {
+    return;
+  }
+
+  if (document.querySelector("link[data-profile-social-styles]")) {
+    return;
+  }
+
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/profile-social.css";
+  link.dataset.profileSocialStyles = "true";
+  document.head.append(link);
+}
+
 async function loadProfileSocial() {
+  ensureProfileSocialStyles();
   const privateProfileHandled = await loadPrivateProfileFriends();
 
   if (!privateProfileHandled) {

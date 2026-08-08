@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Друзья — Ziren Network</title>
+    <meta name="description" content="Друзья, заявки и социальные настройки Ziren Network." />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/network.css" />
+  </head>
+  <body data-network-page="friends">
+    <header class="site-header">
+      <div class="site-container site-nav">
+        <a class="site-brand" href="/">
+          <img src="/images/Ziren.png" alt="" />
+          <span>ZIREN <small>NETWORK</small></span>
+        </a>
+        <button class="site-nav__toggle" type="button" aria-label="Открыть меню" aria-expanded="false" data-nav-toggle>☰</button>
+        <nav class="site-nav__links" data-nav-links>
+          <a href="/">Главная</a>
+          <a href="/assistant.html">Ассистент</a>
+          <a href="/friends.html" aria-current="page">Друзья</a>
+          <a href="/messages.html">Сообщения</a>
+          <a href="/profile">Профиль</a>
+        </nav>
+        <div class="site-nav__actions" data-auth-container></div>
+      </div>
+    </header>
+
+    <main class="network-shell">
+      <div class="site-container network-layout">
+        <aside class="network-sidebar">
+          <span class="network-kicker">ZIREN NETWORK</span>
+          <h2>Социальный центр</h2>
+          <p>Один список друзей и одна переписка на сайте и в приложении Ziren.</p>
+          <nav class="network-nav">
+            <a href="/friends.html" aria-current="page">Друзья <span data-friend-count>0</span></a>
+            <a href="/messages.html">Сообщения <span data-total-unread>0</span></a>
+            <a href="/profile">Мой профиль</a>
+          </nav>
+        </aside>
+
+        <div class="network-main">
+          <section class="network-panel">
+            <div class="network-panel__head">
+              <div>
+                <span class="network-kicker">YOUR FRIEND CODE</span>
+                <h2>Твой код для добавления</h2>
+              </div>
+            </div>
+            <div class="network-search" style="align-items:center">
+              <div>
+                <strong data-friend-code style="font:900 20px ui-monospace,monospace;letter-spacing:.08em">Загрузка…</strong>
+                <p class="network-muted" style="margin:6px 0 0">Код постоянный. Его можно отправить человеку — войти в аккаунт или получить доступ к данным по нему нельзя.</p>
+              </div>
+              <button class="network-button network-button--ghost" type="button" data-copy-friend-code>Копировать</button>
+            </div>
+          </section>
+
+          <section class="network-panel">
+            <div class="network-panel__head">
+              <div>
+                <span class="network-kicker">DISCOVERY</span>
+                <h2>Найти пользователя</h2>
+              </div>
+            </div>
+            <div class="network-search">
+              <input class="network-input" type="search" maxlength="64" placeholder="Ник или код ZR-XXXXXX" data-user-search />
+              <button class="network-button" type="button" data-user-search-button>Найти</button>
+            </div>
+            <p class="network-muted" style="margin:9px 0 0">Можно искать как по нику, так и по уникальному коду пользователя.</p>
+            <div class="network-list" data-user-search-results></div>
+          </section>
+
+          <section class="network-panel">
+            <div class="network-panel__head">
+              <div>
+                <span class="network-kicker">REQUESTS</span>
+                <h2>Заявки в друзья</h2>
+              </div>
+            </div>
+            <div class="network-grid">
+              <div>
+                <h3>Входящие</h3>
+                <div class="network-list" data-incoming-requests></div>
+              </div>
+              <div>
+                <h3>Отправленные</h3>
+                <div class="network-list" data-outgoing-requests></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="network-panel">
+            <div class="network-panel__head">
+              <div>
+                <span class="network-kicker">FRIENDS</span>
+                <h2>Мои друзья · <span data-friends-total>0</span></h2>
+              </div>
+              <label class="network-switch">
+                <span>Показывать в профиле</span>
+                <input type="checkbox" data-friends-privacy />
+              </label>
+            </div>
+            <div class="network-list" data-friends-list></div>
+          </section>
+
+          <div class="network-status" data-network-status hidden></div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/site.js" defer></script>
+    <script src="/network.js" defer></script>
+    <script src="/network-enhance.js" defer></script>
+  </body>
+</html>

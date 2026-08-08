@@ -64,6 +64,40 @@ async function updateAuthNavigation() {
   }
 }
 
+async function updateNetworkNavigation() {
+  const navigation = document.querySelector("[data-nav-links]");
+
+  if (!navigation) {
+    return;
+  }
+
+  try {
+    const session = await loadWebSession();
+
+    if (!session.loggedIn || !session.user) {
+      return;
+    }
+
+    const links = [
+      ["/friends.html", "Друзья"],
+      ["/messages.html", "Сообщения"],
+    ];
+
+    for (const [href, label] of links) {
+      if (navigation.querySelector(`a[href="${href}"]`)) {
+        continue;
+      }
+
+      const link = document.createElement("a");
+      link.href = href;
+      link.textContent = label;
+      navigation.append(link);
+    }
+  } catch {
+    // Публичные страницы продолжают работать без social-навигации.
+  }
+}
+
 async function updateAssistantChatLabels() {
   const labels = document.querySelectorAll("[data-assistant-chat-label]");
 
@@ -174,15 +208,10 @@ function buildTickerGroup(members) {
   group.setAttribute("aria-hidden", "true");
 
   members.forEach((member) => {
-    const item = member.profile_url
-      ? document.createElement("a")
-      : document.createElement("span");
-
+    const item = document.createElement("a");
     item.className = "community-ticker__member";
-
-    if (member.profile_url) {
-      item.href = member.profile_url;
-    }
+    item.href = member.profile_url;
+    item.title = `Открыть профиль ${member.username}`;
 
     const avatar = document.createElement("img");
     avatar.src = member.avatar_url || "/images/Ziren.png";
@@ -221,15 +250,17 @@ async function loadCommunityTicker() {
     }
 
     const data = await response.json();
-    const realMembers = Array.isArray(data.members) ? data.members : [];
+    const realMembers = Array.isArray(data.members)
+      ? data.members.filter((member) => member?.profile_url)
+      : [];
 
     if (!realMembers.length) {
       track.classList.add("community-ticker--empty");
       track.textContent =
-        "Стань первым участником, который появится в ленте сообщества";
+        "Пока нет участников с открытым публичным профилем";
 
       if (status) {
-        status.textContent = "Только реальные профили с разрешением владельца";
+        status.textContent = "В ленте появляются только профили, которые владелец разрешил открывать";
       }
 
       return;
@@ -253,7 +284,7 @@ async function loadCommunityTicker() {
     );
 
     if (status) {
-      status.textContent = `${formatMemberCount(data.total)} разрешили показ профиля`;
+      status.textContent = `${formatMemberCount(realMembers.length)} с открытым профилем · нажми на ник`;
     }
   } catch (error) {
     track.classList.add("community-ticker--empty");
@@ -342,11 +373,16 @@ async function loadPrivateProfileFriends() {
     friendsTitle.textContent = `Друзья · ${friends.length}`;
     const friendsText = document.createElement("p");
     friendsText.textContent =
-      "Голосовые имена и разрешение на озвучивание настраиваются в приложении Ziren.";
+      "Полное управление друзьями, голосовыми именами и озвучиванием доступно в разделе «Друзья» на сайте и в приложении.";
+    const openFriends = document.createElement("a");
+    openFriends.className = "site-button site-button--ghost";
+    openFriends.href = "/friends.html";
+    openFriends.textContent = "Открыть друзей";
     friendsCard.append(
       friendsTitle,
       friendsText,
       buildFriendList(friends, "Друзей пока нет."),
+      openFriends,
     );
 
     const privacyCard = document.createElement("article");
@@ -386,7 +422,11 @@ async function loadPrivateProfileFriends() {
       }
     });
     privacyLabel.append(privacyCopy, privacyInput);
-    privacyCard.append(privacyTitle, privacyText, privacyLabel);
+    const openMessages = document.createElement("a");
+    openMessages.className = "site-button site-button--primary site-button--compact";
+    openMessages.href = "/messages.html";
+    openMessages.textContent = "Открыть сообщения";
+    privacyCard.append(privacyTitle, privacyText, privacyLabel, openMessages);
 
     grid.replaceChildren(friendsCard, privacyCard);
     return true;
@@ -454,6 +494,110 @@ async function loadPublicProfileFriends() {
   }
 }
 
+async function loadPublicProfileActions() {
+  const match = window.location.pathname.match(/^\/community\/(\d+)\/?$/);
+
+  if (!match) {
+    return;
+  }
+
+  try {
+    const session = await loadWebSession();
+
+    if (!session.loggedIn || !session.user || Number(session.user.id) === Number(match[1])) {
+      return;
+    }
+
+    const profileResponse = await fetch(`/api/social/public/${match[1]}`, {
+      cache: "no-store",
+    });
+
+    if (!profileResponse.ok) {
+      return;
+    }
+
+    const profileData = await profileResponse.json();
+    const profile = profileData.profile;
+
+    if (!profile?.username) {
+      return;
+    }
+
+    const searchResponse = await fetch(
+      `/api/social/users/search?q=${encodeURIComponent(profile.username)}`,
+      { credentials: "include", cache: "no-store" },
+    );
+
+    if (!searchResponse.ok) {
+      return;
+    }
+
+    const searchData = await searchResponse.json();
+    const relationship = Array.isArray(searchData.users)
+      ? searchData.users.find((candidate) => Number(candidate.id) === Number(profile.id))
+      : null;
+
+    if (!relationship) {
+      return;
+    }
+
+    const toolbar = document.querySelector(".profile-toolbar");
+
+    if (!toolbar || toolbar.querySelector("[data-public-profile-network-actions]")) {
+      return;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "network-profile-actions";
+    actions.dataset.publicProfileNetworkActions = "true";
+
+    if (relationship.friendship_status === "accepted") {
+      const message = document.createElement("a");
+      message.className = "site-button site-button--primary site-button--compact";
+      message.href = `/messages.html?user=${profile.id}`;
+      message.textContent = "Написать";
+      actions.append(message);
+    } else if (relationship.friendship_status === "none") {
+      const add = document.createElement("button");
+      add.className = "site-button site-button--primary site-button--compact";
+      add.type = "button";
+      add.textContent = "Добавить в друзья";
+      add.addEventListener("click", async () => {
+        add.disabled = true;
+        try {
+          const response = await fetch("/api/social/friends/requests", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: profile.id }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Friend request failed");
+          }
+
+          add.textContent = "Заявка отправлена";
+        } catch {
+          add.textContent = "Не удалось отправить";
+          add.disabled = false;
+        }
+      });
+      actions.append(add);
+    } else {
+      const state = document.createElement("span");
+      state.className = "site-button site-button--ghost";
+      state.textContent = relationship.request_direction === "incoming"
+        ? "Заявка от пользователя — открой Друзья"
+        : "Заявка отправлена";
+      actions.append(state);
+    }
+
+    toolbar.append(actions);
+  } catch (error) {
+    console.error("Не удалось загрузить действия профиля", error);
+  }
+}
+
 function ensureProfileSocialStyles() {
   const profilePath = window.location.pathname === "/profile";
   const publicProfilePath = /^\/community\/\d+\/?$/.test(window.location.pathname);
@@ -462,15 +606,21 @@ function ensureProfileSocialStyles() {
     return;
   }
 
-  if (document.querySelector("link[data-profile-social-styles]")) {
-    return;
+  if (!document.querySelector("link[data-profile-social-styles]")) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/profile-social.css";
+    link.dataset.profileSocialStyles = "true";
+    document.head.append(link);
   }
 
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "/profile-social.css";
-  link.dataset.profileSocialStyles = "true";
-  document.head.append(link);
+  if (!document.querySelector("link[data-network-styles]")) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/network.css";
+    link.dataset.networkStyles = "true";
+    document.head.append(link);
+  }
 }
 
 async function loadProfileSocial() {
@@ -478,7 +628,10 @@ async function loadProfileSocial() {
   const privateProfileHandled = await loadPrivateProfileFriends();
 
   if (!privateProfileHandled) {
-    await loadPublicProfileFriends();
+    await Promise.all([
+      loadPublicProfileFriends(),
+      loadPublicProfileActions(),
+    ]);
   }
 }
 
@@ -582,6 +735,7 @@ function setupRevealAnimations() {
 
 document.addEventListener("DOMContentLoaded", () => {
   updateAuthNavigation();
+  updateNetworkNavigation();
   updateAssistantChatLabels();
   loadCommunityTicker();
   loadProfileSocial();

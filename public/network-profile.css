@@ -1,0 +1,131 @@
+.network-profile-shell {
+  min-height: calc(100vh - 72px);
+  padding: 38px 0 70px;
+  background:
+    radial-gradient(circle at 80% 5%, rgba(0, 245, 255, .07), transparent 28%),
+    radial-gradient(circle at 10% 20%, rgba(126, 80, 255, .08), transparent 34%),
+    #05080e;
+}
+
+.network-profile-backbar {
+  margin-bottom: 14px;
+}
+
+.network-profile-card,
+.network-profile-friends {
+  padding: 22px;
+  border: 1px solid rgba(0, 245, 255, .12);
+  border-radius: 20px;
+  background: rgba(6, 11, 18, .88);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .36);
+}
+
+.network-profile-friends {
+  margin-top: 16px;
+}
+
+.network-profile-hero {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
+}
+
+.network-profile-avatar {
+  width: 112px;
+  height: 112px;
+  border: 1px solid rgba(0, 245, 255, .22);
+  border-radius: 22px;
+  object-fit: cover;
+  background: #02050a;
+  box-shadow: 0 0 28px rgba(0, 245, 255, .08);
+}
+
+.network-profile-copy h1,
+.network-profile-copy p {
+  margin: 0;
+}
+
+.network-profile-copy h1 {
+  margin-top: 4px;
+  font-size: clamp(28px, 5vw, 48px);
+}
+
+.network-profile-status {
+  margin-top: 7px !important;
+  color: #a9bccb;
+  font-size: 14px;
+}
+
+.network-profile-bio {
+  max-width: 720px;
+  margin-top: 15px !important;
+  color: #7f92a4;
+  line-height: 1.65;
+}
+
+.network-profile-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.network-profile-state {
+  min-height: 42px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 245, 255, .13);
+  border-radius: 12px;
+  color: #9cb4bf;
+  background: rgba(0, 245, 255, .035);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.network-profile-friend {
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, .055);
+  border-radius: 12px;
+  color: #e9faff;
+  background: rgba(0, 0, 0, .16);
+  text-decoration: none;
+}
+
+.network-profile-friend:hover {
+  border-color: rgba(0, 245, 255, .32);
+  background: rgba(0, 245, 255, .05);
+}
+
+.network-profile-friend img {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.network-profile-loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  color: #7f92a4;
+}
+
+@media (max-width: 640px) {
+  .network-profile-shell {
+    padding-top: 20px;
+  }
+
+  .network-profile-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .network-profile-avatar {
+    width: 86px;
+    height: 86px;
+  }
+}

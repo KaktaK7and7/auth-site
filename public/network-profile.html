@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Профиль — Ziren Network</title>
+    <meta name="description" content="Профиль пользователя Ziren Network." />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/network.css" />
+    <link rel="stylesheet" href="/network-profile.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-container site-nav">
+        <a class="site-brand" href="/">
+          <img src="/images/Ziren.png" alt="" />
+          <span>ZIREN <small>NETWORK PROFILE</small></span>
+        </a>
+        <button class="site-nav__toggle" type="button" aria-label="Открыть меню" aria-expanded="false" data-nav-toggle>☰</button>
+        <nav class="site-nav__links" data-nav-links>
+          <a href="/">Главная</a>
+          <a href="/friends.html">Друзья</a>
+          <a href="/messages.html">Сообщения</a>
+          <a href="/profile">Мой профиль</a>
+        </nav>
+        <div class="site-nav__actions" data-auth-container></div>
+      </div>
+    </header>
+
+    <main class="network-profile-shell">
+      <div class="site-container">
+        <div class="network-profile-backbar">
+          <a class="site-button site-button--ghost" href="/friends.html">← Друзья</a>
+        </div>
+
+        <section class="network-profile-card" data-network-profile-card>
+          <div class="network-profile-loading">Загружаем профиль…</div>
+        </section>
+
+        <section class="network-profile-friends" data-network-profile-friends hidden>
+          <div class="network-panel__head">
+            <div>
+              <span class="network-kicker">FRIENDS</span>
+              <h2>Друзья · <span data-network-profile-friend-count>0</span></h2>
+            </div>
+          </div>
+          <div class="network-list" data-network-profile-friend-list></div>
+        </section>
+      </div>
+    </main>
+
+    <script src="/site.js" defer></script>
+    <script src="/network-profile.js" defer></script>
+  </body>
+</html>

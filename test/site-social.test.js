@@ -14,4 +14,5 @@ test("site social profile script remains valid browser JavaScript", () => {
   assert.match(source, /\/api\/social\/friends/);
   assert.match(source, /show_friends_on_profile/);
   assert.match(source, /\/api\/social\/public\//);
+  assert.match(source, /\/profile-social\.css/);
 });

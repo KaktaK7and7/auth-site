@@ -149,6 +149,25 @@ function formatMemberCount(total) {
   return `${total} участников`;
 }
 
+function formatFriendCount(total) {
+  const absolute = Math.abs(Number(total)) % 100;
+  const lastDigit = absolute % 10;
+
+  if (absolute > 10 && absolute < 20) {
+    return `${total} друзей`;
+  }
+
+  if (lastDigit === 1) {
+    return `${total} друг`;
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${total} друга`;
+  }
+
+  return `${total} друзей`;
+}
+
 function buildTickerGroup(members) {
   const group = document.createElement("div");
   group.className = "community-ticker__group";
@@ -240,6 +259,206 @@ async function loadCommunityTicker() {
     track.classList.add("community-ticker--empty");
     track.textContent = "Лента сообщества временно недоступна";
     console.error("Не удалось загрузить участников", error);
+  }
+}
+
+function createProfileFriendNode(friend) {
+  const node = friend.public_profile_url
+    ? document.createElement("a")
+    : document.createElement("span");
+  node.className = "profile-social-member";
+
+  if (friend.public_profile_url) {
+    node.href = friend.public_profile_url;
+  }
+
+  const avatar = document.createElement("img");
+  avatar.src = friend.avatar_url || "/images/Ziren.png";
+  avatar.alt = "";
+  avatar.loading = "lazy";
+
+  const copy = document.createElement("span");
+  const name = document.createElement("strong");
+  name.textContent = friend.username;
+  copy.append(name);
+
+  if (friend.voice_alias) {
+    const alias = document.createElement("small");
+    alias.textContent = `У тебя: ${friend.voice_alias}`;
+    copy.append(alias);
+  }
+
+  node.append(avatar, copy);
+  return node;
+}
+
+function buildFriendList(friends, emptyText) {
+  const list = document.createElement("div");
+  list.className = "profile-social-members";
+
+  if (!friends.length) {
+    const empty = document.createElement("p");
+    empty.className = "profile-empty";
+    empty.textContent = emptyText;
+    list.append(empty);
+    return list;
+  }
+
+  friends.forEach((friend) => list.append(createProfileFriendNode(friend)));
+  return list;
+}
+
+async function loadPrivateProfileFriends() {
+  const grid = document.querySelector(".profile-social-grid");
+
+  if (!grid || window.location.pathname !== "/profile") {
+    return false;
+  }
+
+  try {
+    const response = await fetch("/api/social/friends", {
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Friends request failed");
+    }
+
+    const data = await response.json();
+    const friends = Array.isArray(data.friends) ? data.friends : [];
+    const requests = Array.isArray(data.requests) ? data.requests : [];
+    const incoming = requests.filter((request) => request.direction === "incoming");
+    const panel = grid.closest(".profile-panel");
+    const state = panel?.querySelector(".profile-panel__state");
+
+    if (state) {
+      state.textContent = `${formatFriendCount(friends.length)} · ${incoming.length} входящих`;
+    }
+
+    const friendsCard = document.createElement("article");
+    friendsCard.className = "profile-social-card";
+    const friendsTitle = document.createElement("h4");
+    friendsTitle.textContent = `Друзья · ${friends.length}`;
+    const friendsText = document.createElement("p");
+    friendsText.textContent =
+      "Голосовые имена и разрешение на озвучивание настраиваются в приложении Ziren.";
+    friendsCard.append(
+      friendsTitle,
+      friendsText,
+      buildFriendList(friends, "Друзей пока нет."),
+    );
+
+    const privacyCard = document.createElement("article");
+    privacyCard.className = "profile-social-card";
+    const privacyTitle = document.createElement("h4");
+    privacyTitle.textContent = "Приватность друзей";
+    const privacyText = document.createElement("p");
+    privacyText.textContent =
+      "Когда список скрыт, посетителям не отдаётся ни список, ни количество друзей.";
+    const privacyLabel = document.createElement("label");
+    privacyLabel.className = "profile-social-privacy";
+    const privacyCopy = document.createElement("span");
+    privacyCopy.textContent = "Показывать друзей в публичном профиле";
+    const privacyInput = document.createElement("input");
+    privacyInput.type = "checkbox";
+    privacyInput.checked = Boolean(data.privacy?.show_friends_on_profile);
+    privacyInput.addEventListener("change", async () => {
+      privacyInput.disabled = true;
+      const requested = privacyInput.checked;
+
+      try {
+        const privacyResponse = await fetch("/api/social/privacy", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ show_friends_on_profile: requested }),
+        });
+
+        if (!privacyResponse.ok) {
+          throw new Error("Privacy update failed");
+        }
+      } catch (error) {
+        privacyInput.checked = !requested;
+        console.error("Не удалось сохранить видимость друзей", error);
+      } finally {
+        privacyInput.disabled = false;
+      }
+    });
+    privacyLabel.append(privacyCopy, privacyInput);
+    privacyCard.append(privacyTitle, privacyText, privacyLabel);
+
+    grid.replaceChildren(friendsCard, privacyCard);
+    return true;
+  } catch (error) {
+    console.error("Не удалось загрузить друзей профиля", error);
+    return true;
+  }
+}
+
+async function loadPublicProfileFriends() {
+  const match = window.location.pathname.match(/^\/community\/(\d+)\/?$/);
+
+  if (!match) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/social/public/${match[1]}`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    const profile = data.profile;
+
+    if (!profile?.friends_visible) {
+      return;
+    }
+
+    const profileGrid = document.querySelector(".profile-grid");
+
+    if (!profileGrid) {
+      return;
+    }
+
+    const panel = document.createElement("section");
+    panel.className = "profile-panel profile-panel--wide";
+
+    const head = document.createElement("div");
+    head.className = "profile-panel__head";
+    const headCopy = document.createElement("div");
+    const kicker = document.createElement("span");
+    kicker.textContent = "ZIREN NETWORK";
+    const title = document.createElement("h3");
+    title.textContent = `Друзья · ${profile.friends_count || 0}`;
+    headCopy.append(kicker, title);
+    const state = document.createElement("span");
+    state.className = "profile-panel__state";
+    state.textContent = "ПОКАЗ РАЗРЕШЁН ВЛАДЕЛЬЦЕМ";
+    head.append(headCopy, state);
+
+    panel.append(
+      head,
+      buildFriendList(
+        Array.isArray(profile.friends) ? profile.friends : [],
+        "Список друзей пуст.",
+      ),
+    );
+    profileGrid.append(panel);
+  } catch (error) {
+    console.error("Не удалось загрузить публичный список друзей", error);
+  }
+}
+
+async function loadProfileSocial() {
+  const privateProfileHandled = await loadPrivateProfileFriends();
+
+  if (!privateProfileHandled) {
+    await loadPublicProfileFriends();
   }
 }
 
@@ -345,6 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateAuthNavigation();
   updateAssistantChatLabels();
   loadCommunityTicker();
+  loadProfileSocial();
   showFormErrorFromQuery();
   setupMobileNavigation();
   setupCopyButtons();

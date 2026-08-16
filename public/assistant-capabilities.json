@@ -1,0 +1,255 @@
+{
+  "version": "2026-08-16-control-routing-v2",
+  "updated_at": "2026-08-16",
+  "modes": {
+    "snake": {
+      "title": "Змея",
+      "badge": "LOCAL · FREE",
+      "description": "Локальные команды по точным и пользовательским триггерам. Нейросеть не участвует."
+    },
+    "melissa": {
+      "title": "Мелисса",
+      "badge": "SMART · FUTURE PAID",
+      "description": "Понимает естественную формулировку через AI, выбирает только разрешённую capability, а действие выполняет локальный Core."
+    }
+  },
+  "features": [
+    {
+      "feature_id": "system.app_launcher",
+      "title": "Запуск приложений и игр",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "app.launch", "title": "Открыть приложение или игру", "example": "Открой Discord" }
+      ]
+    },
+    {
+      "feature_id": "system.window_control",
+      "title": "Управление окнами",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "window.close", "title": "Закрыть окно обычным WM_CLOSE", "example": "Закрой Проводник" },
+        { "id": "window.minimize", "title": "Свернуть окно", "example": "Сверни Discord" },
+        { "id": "window.maximize", "title": "Развернуть окно", "example": "Разверни браузер" },
+        { "id": "window.restore", "title": "Переключиться на окно", "example": "Переключись на Проводник" },
+        { "id": "window.desktop", "title": "Показать рабочий стол", "example": "Покажи рабочий стол" }
+      ]
+    },
+    {
+      "feature_id": "system.keyboard",
+      "title": "Клавиатура и горячие клавиши",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "keyboard.tab", "title": "Tab", "example": "Перейди в следующее поле" },
+        { "id": "keyboard.enter", "title": "Enter", "example": "Нажми Enter" },
+        { "id": "keyboard.copy", "title": "Ctrl+C", "example": "Скопируй выделенное" },
+        { "id": "keyboard.paste", "title": "Ctrl+V", "example": "Вставь" },
+        { "id": "keyboard.undo", "title": "Ctrl+Z", "example": "Отмени последнее действие" },
+        { "id": "keyboard.task_manager", "title": "Диспетчер задач", "example": "Открой диспетчер задач" },
+        { "id": "keyboard.task_view", "title": "Представление задач", "example": "Покажи все окна" },
+        { "id": "keyboard.new_desktop", "title": "Новый виртуальный рабочий стол", "example": "Создай новый рабочий стол" }
+      ]
+    },
+    {
+      "feature_id": "system.text_input",
+      "title": "Голосовой ввод текста",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "text.type", "title": "Напечатать Unicode-текст в активное поле", "example": "Напечатай текст привет брат" }
+      ]
+    },
+    {
+      "feature_id": "system.clipboard",
+      "title": "Буфер обмена",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "clipboard.read", "title": "Прочитать текстовый буфер", "example": "Что скопировано?" },
+        { "id": "clipboard.write", "title": "Записать текст в буфер", "example": "Скопируй текст привет" }
+      ]
+    },
+    {
+      "feature_id": "system.browser_control",
+      "title": "Управление браузером",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "browser.new_tab", "title": "Новая вкладка", "example": "Открой новую вкладку" },
+        { "id": "browser.close_tab", "title": "Закрыть вкладку", "example": "Закрой текущую вкладку" },
+        { "id": "browser.restore_tab", "title": "Вернуть закрытую вкладку", "example": "Верни закрытую вкладку" },
+        { "id": "browser.back", "title": "Назад", "example": "Вернись назад" },
+        { "id": "browser.forward", "title": "Вперёд", "example": "Следующая страница" },
+        { "id": "browser.reload", "title": "Обновить страницу", "example": "Обнови страницу" }
+      ]
+    },
+    {
+      "feature_id": "system.file_navigation",
+      "title": "Файлы и системные папки",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "files.explorer", "title": "Открыть Проводник", "example": "Открой Проводник" },
+        { "id": "files.folder.downloads", "title": "Открыть Загрузки", "example": "Открой загрузки" },
+        { "id": "files.folder.documents", "title": "Открыть Документы", "example": "Открой документы" },
+        { "id": "files.folder.pictures", "title": "Открыть Изображения", "example": "Открой картинки" },
+        { "id": "files.folder.desktop", "title": "Открыть Рабочий стол", "example": "Открой папку рабочего стола" },
+        { "id": "files.folder.music", "title": "Открыть Музыку", "example": "Открой папку музыки" },
+        { "id": "files.folder.videos", "title": "Открыть Видео", "example": "Открой папку видео" },
+        { "id": "files.latest.reveal", "title": "Показать последний скачанный файл", "example": "Покажи последний скачанный файл" },
+        { "id": "files.latest.open", "title": "Открыть последний безопасный скачанный файл", "example": "Открой последний скачанный файл" }
+      ],
+      "note": "Голосовой запуск последнего файла использует allowlist обычных документов, медиа, архивов и творческих форматов; исполняемые и неизвестные типы не запускаются."
+    },
+    {
+      "feature_id": "system.volume",
+      "title": "Системная громкость",
+      "status": "available",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "volume.up", "title": "Громче", "example": "Сделай громче" },
+        { "id": "volume.down", "title": "Тише", "example": "Сделай тише" },
+        { "id": "volume.mute", "title": "Выключить звук", "example": "Выключи звук" },
+        { "id": "volume.unmute", "title": "Вернуть звук", "example": "Верни звук" },
+        { "id": "volume.set", "title": "Задать громкость 0–100%", "example": "Поставь громкость 40 процентов" }
+      ]
+    },
+    {
+      "feature_id": "system.media_control",
+      "title": "Музыка и системное медиавоспроизведение",
+      "status": "available",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "media.pause", "title": "Пауза", "example": "Поставь на паузу" },
+        { "id": "media.resume", "title": "Продолжить", "example": "Продолжи музыку" },
+        { "id": "media.next", "title": "Следующий трек", "example": "Следующий трек" },
+        { "id": "media.previous", "title": "Предыдущий трек", "example": "Предыдущая песня" },
+        { "id": "media.stop", "title": "Остановить", "example": "Останови музыку" },
+        { "id": "media.play_preset", "title": "Открыть сохранённый музыкальный сценарий", "example": "Включи мою волну" }
+      ]
+    },
+    {
+      "feature_id": "system.screenshot",
+      "title": "Снимок экрана",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "screenshot.save", "title": "Сохранить снимок основного экрана", "example": "Сделай скриншот" }
+      ]
+    },
+    {
+      "feature_id": "system.screen_recording",
+      "title": "Запись экрана",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "screen_recording.toggle", "title": "Переключить запись через Windows Game Bar", "example": "Начни запись экрана" }
+      ],
+      "note": "Ziren передаёт системное сочетание Win+Alt+R. Game Bar должен быть доступен в Windows."
+    },
+    {
+      "feature_id": "system.status",
+      "title": "Состояние компьютера",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "system.status.summary", "title": "CPU, RAM и свободное место диска C", "example": "Как загружен компьютер?" },
+        { "id": "system.status.gpu_temperature", "title": "Температура NVIDIA GPU", "example": "Какая температура видеокарты?" }
+      ],
+      "note": "Температура GPU читается через установленный NVIDIA nvidia-smi."
+    },
+    {
+      "feature_id": "system.brightness",
+      "title": "Яркость мониторов",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "brightness.get", "title": "Узнать яркость одного или всех мониторов", "example": "Какая яркость второго монитора?" },
+        { "id": "brightness.set", "title": "Установить яркость 0–100%", "example": "Яркость второго монитора 40 процентов" }
+      ],
+      "note": "Используется Windows DDC/CI. Некоторые дисплеи и встроенные панели не поддерживают этот способ управления."
+    },
+    {
+      "feature_id": "system.monitors",
+      "title": "Несколько мониторов",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "monitor.window_left", "title": "Перенести активное окно на монитор слева", "example": "Перенеси окно на левый монитор" },
+        { "id": "monitor.window_right", "title": "Перенести активное окно на монитор справа", "example": "Перенеси окно на правый монитор" }
+      ]
+    },
+    {
+      "feature_id": "system.scheduler",
+      "title": "Напоминания и будильники",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "scheduler.reminder.relative", "title": "Напомнить через интервал", "example": "Напомни через двадцать минут проверить сборку" },
+        { "id": "scheduler.alarm.relative", "title": "Будильник через интервал", "example": "Поставь будильник через две минуты" },
+        { "id": "scheduler.alarm.clock", "title": "Будильник на время", "example": "Поставь будильник на семь тридцать" },
+        { "id": "scheduler.list", "title": "Показать активные задачи", "example": "Какие у меня напоминания?" },
+        { "id": "scheduler.clear", "title": "Удалить все задачи", "example": "Отмени все будильники" }
+      ],
+      "note": "Задачи сохраняются локально и переживают перезапуск Ziren."
+    },
+    {
+      "feature_id": "system.power",
+      "title": "Питание и блокировка Windows",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "power.lock", "title": "Заблокировать сеанс", "example": "Заблокируй компьютер" },
+        { "id": "power.sleep.request", "title": "Запросить спящий режим", "example": "Переведи компьютер в спящий режим" },
+        { "id": "power.shutdown.request", "title": "Запросить выключение", "example": "Выключи компьютер" },
+        { "id": "power.restart.request", "title": "Запросить перезагрузку", "example": "Перезагрузи компьютер" },
+        { "id": "power.confirm", "title": "Подтвердить ожидающее действие", "example": "Подтверждаю" },
+        { "id": "power.cancel", "title": "Отменить ожидающее действие", "example": "Отмени выключение" }
+      ],
+      "note": "Сон, выключение и перезагрузка требуют отдельного подтверждения в течение 30 секунд."
+    },
+    {
+      "feature_id": "social.messaging",
+      "title": "Сообщения друзьям Ziren",
+      "status": "testing",
+      "snake": true,
+      "melissa": true,
+      "actions": [
+        { "id": "social.message.text", "title": "Отправить текст другу", "example": "Напиши Диане привет" },
+        { "id": "social.message.screenshot", "title": "Отправить скриншот другу", "example": "Сделай скриншот и отправь Диане" },
+        { "id": "social.message.clipboard", "title": "Отправить скопированный текст", "example": "Отправь скопированный текст Диане" }
+      ]
+    },
+    {
+      "feature_id": "screen.analysis",
+      "title": "Разовый анализ экрана",
+      "status": "available",
+      "snake": false,
+      "melissa": true,
+      "actions": [
+        { "id": "screen.explain", "title": "Объяснить содержимое экрана или ошибку", "example": "Что у меня на экране?" },
+        { "id": "screen.translate", "title": "Перевести видимый текст", "example": "Переведи текст на экране" },
+        { "id": "screen.locate", "title": "Найти элемент и объяснить его расположение", "example": "Где здесь кнопка Ассистент?" }
+      ],
+      "note": "Снимок делается только по явной просьбе. Автоматический клик по визуальным координатам не заявляется как доступная функция."
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Возможности Ziren Assistant</title>
+    <meta
+      name="description"
+      content="Актуальный каталог функций Ziren Assistant: локальный режим Змея, умный режим Мелисса, управление Windows, напоминания, мониторы, сообщения и другое."
+    />
+    <link rel="icon" type="image/png" href="/images/Ziren.png" />
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/features.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-container site-nav">
+          <a class="site-brand" href="/" aria-label="Ziren — главная">
+            <img src="/images/Ziren.png" alt="" />
+            <span>ZIREN <small>ASSISTANT CAPABILITIES</small></span>
+          </a>
+          <button
+            class="site-nav__toggle"
+            type="button"
+            aria-label="Открыть меню"
+            aria-expanded="false"
+            data-nav-toggle
+          >☰</button>
+          <nav class="site-nav__links" data-nav-links aria-label="Основная навигация">
+            <a href="/">Главная</a>
+            <a href="/assistant.html">Ассистент</a>
+            <a href="/features.html" aria-current="page">Возможности</a>
+            <a href="/friends.html">Друзья</a>
+            <a href="/messages.html">Сообщения</a>
+          </nav>
+          <div class="site-nav__actions" data-auth-container>
+            <a class="site-button site-button--ghost" href="/login.html">Войти</a>
+            <a class="site-button site-button--primary site-button--compact" href="/register.html">Регистрация</a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="features-hero">
+          <div class="site-container features-hero__layout">
+            <div>
+              <span class="site-status">CONTROL ROUTING V2 · ACTIVE DEVELOPMENT</span>
+              <h1>Что умеет <span>Ziren Assistant</span></h1>
+              <p>
+                Один каталог для двух способов управления. «Змея» выполняет
+                локальные команды по точным и пользовательским триггерам, а
+                «Мелисса» понимает естественную формулировку через AI и передаёт
+                в Core только разрешённое структурированное действие.
+              </p>
+            </div>
+            <div class="features-hero__status">
+              <span>CATALOG</span>
+              <strong data-feature-count>—</strong>
+              <small>функций в текущем manifest</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="site-section site-section--panel">
+          <div class="site-container">
+            <div class="features-modes" data-mode-list></div>
+          </div>
+        </section>
+
+        <section class="site-section">
+          <div class="site-container">
+            <div class="features-toolbar">
+              <div>
+                <span class="site-eyebrow">Capability registry</span>
+                <h2>Функции ассистента</h2>
+              </div>
+              <label class="features-search">
+                <span>Поиск</span>
+                <input
+                  type="search"
+                  placeholder="Например: яркость, скриншот, будильник..."
+                  data-feature-search
+                />
+              </label>
+            </div>
+
+            <div class="features-legend">
+              <span><i class="feature-dot feature-dot--available"></i> Работает в текущем контуре</span>
+              <span><i class="feature-dot feature-dot--testing"></i> Добавлено и проходит тестирование</span>
+            </div>
+
+            <div class="features-grid" data-feature-list>
+              <div class="features-loading">Загрузка каталога возможностей...</div>
+            </div>
+            <p class="features-empty" data-feature-empty hidden>
+              По этому запросу функций не найдено.
+            </p>
+          </div>
+        </section>
+
+        <section class="site-section site-section--panel">
+          <div class="site-container features-safety">
+            <div>
+              <span class="site-eyebrow">Safety model</span>
+              <h2>AI не получает произвольный доступ к Windows</h2>
+            </div>
+            <p>
+              Мелисса выбирает только <code>feature_id</code> и <code>action_id</code>
+              из разрешённого каталога. Core повторно проверяет действие и только
+              после этого вызывает локальный модуль. Неизвестные действия,
+              произвольный shell и низкая уверенность классификатора не исполняются.
+            </p>
+            <p>
+              Выключение, перезагрузка и спящий режим требуют отдельного
+              подтверждения. Визуальный анализ экрана не заявляется как разрешение
+              на произвольный клик по координатам.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="site-container">
+          <div class="site-footer__bottom">
+            <span>© 2026 Ziren · каталог функций обновляется вместе с разработкой.</span>
+            <a href="/assistant.html">Вернуться к Ziren Assistant</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script src="/site.js" defer></script>
+    <script src="/features.js" defer></script>
+  </body>
+</html>

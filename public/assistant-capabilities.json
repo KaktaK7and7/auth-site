@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-16-control-routing-v2",
-  "updated_at": "2026-08-16",
+  "version": "2026-08-17-control-routing-v2",
+  "updated_at": "2026-08-17",
   "modes": {
     "snake": {
       "title": "Змея",
@@ -45,15 +45,17 @@
       "snake": true,
       "melissa": true,
       "actions": [
-        { "id": "keyboard.tab", "title": "Tab", "example": "Перейди в следующее поле" },
-        { "id": "keyboard.enter", "title": "Enter", "example": "Нажми Enter" },
+        { "id": "keyboard.tab", "title": "Tab", "example": "Нажми Tab" },
+        { "id": "keyboard.enter", "title": "Enter", "example": "Нажми интер" },
         { "id": "keyboard.copy", "title": "Ctrl+C", "example": "Скопируй выделенное" },
         { "id": "keyboard.paste", "title": "Ctrl+V", "example": "Вставь" },
         { "id": "keyboard.undo", "title": "Ctrl+Z", "example": "Отмени последнее действие" },
         { "id": "keyboard.task_manager", "title": "Диспетчер задач", "example": "Открой диспетчер задач" },
         { "id": "keyboard.task_view", "title": "Представление задач", "example": "Покажи все окна" },
-        { "id": "keyboard.new_desktop", "title": "Новый виртуальный рабочий стол", "example": "Создай новый рабочий стол" }
-      ]
+        { "id": "keyboard.new_desktop", "title": "Новый виртуальный рабочий стол", "example": "Создай новый рабочий стол" },
+        { "id": "keyboard.desktop_number", "title": "Переключиться на виртуальный рабочий стол по номеру", "example": "Переключи на первый рабочий стол" }
+      ],
+      "note": "Для адресного переключения Ziren сначала переходит к крайнему левому виртуальному рабочему столу, затем делает нужное число безопасных системных переходов вправо."
     },
     {
       "feature_id": "system.text_input",
@@ -146,8 +148,10 @@
       "snake": true,
       "melissa": true,
       "actions": [
-        { "id": "screenshot.save", "title": "Сохранить снимок основного экрана", "example": "Сделай скриншот" }
-      ]
+        { "id": "screenshot.save", "title": "Сохранить снимок основного экрана", "example": "Сделай скриншот" },
+        { "id": "screenshot.open_folder", "title": "Открыть фиксированную папку скриншотов Ziren", "example": "Открой папку куда мы сохраняем скриншоты" }
+      ],
+      "note": "Папка скриншотов фиксирована: Pictures/Ziren/Screenshots. Голосовая команда не может подставить произвольный путь."
     },
     {
       "feature_id": "system.screen_recording",
@@ -168,9 +172,9 @@
       "melissa": true,
       "actions": [
         { "id": "system.status.summary", "title": "CPU, RAM и свободное место диска C", "example": "Как загружен компьютер?" },
-        { "id": "system.status.gpu_temperature", "title": "Температура NVIDIA GPU", "example": "Какая температура видеокарты?" }
+        { "id": "system.status.gpu_temperature", "title": "Температура GPU", "example": "Какая температура видеокарты?" }
       ],
-      "note": "Температура GPU читается через установленный NVIDIA nvidia-smi."
+      "note": "Температура читается через установленный NVIDIA nvidia-smi; голосовой ответ сообщает только количество градусов."
     },
     {
       "feature_id": "system.brightness",

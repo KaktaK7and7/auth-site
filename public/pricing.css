@@ -1,0 +1,210 @@
+.pricing-hero {
+  padding: 96px 0 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% 35% auto -15%;
+  height: 520px;
+  border: 1px solid rgba(64, 255, 224, 0.13);
+  border-radius: 50%;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.pricing-hero__inner {
+  max-width: 1040px;
+}
+
+.pricing-hero h1 {
+  max-width: 920px;
+  margin: 20px 0 22px;
+  font-size: clamp(2.6rem, 7vw, 5.7rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.pricing-hero h1 span {
+  color: var(--accent, #62f8df);
+}
+
+.pricing-hero p {
+  max-width: 760px;
+  color: var(--text-muted, #9aa6af);
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.pricing-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.pricing-hero__chips span,
+.pricing-beta {
+  border: 1px solid rgba(98, 248, 223, 0.18);
+  background: rgba(98, 248, 223, 0.045);
+}
+
+.pricing-hero__chips span {
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: #c7d5d5;
+  font-size: 0.84rem;
+}
+
+.pricing-section {
+  padding-top: 20px;
+}
+
+.pricing-beta {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 16px 18px;
+  margin-bottom: 28px;
+  border-radius: 14px;
+  color: #b9c6c7;
+}
+
+.pricing-beta strong {
+  color: #62f8df;
+  white-space: nowrap;
+}
+
+.pricing-period {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.025);
+  border-radius: 13px;
+  margin-bottom: 26px;
+}
+
+.pricing-period button {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #87969b;
+  padding: 10px 15px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.pricing-period button span { color: #62f8df; font-size: .75rem; }
+.pricing-period button.is-active { background: rgba(98,248,223,.1); color: #e9ffff; }
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pricing-card {
+  min-height: 510px;
+  display: flex;
+  flex-direction: column;
+  padding: 26px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-card--featured {
+  border-color: rgba(98,248,223,.36);
+  box-shadow: 0 18px 60px rgba(0,0,0,.24), inset 0 0 0 1px rgba(98,248,223,.05);
+}
+
+.pricing-card--featured::before {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -110px;
+  top: -110px;
+  border-radius: 50%;
+  background: rgba(98,248,223,.12);
+  filter: blur(45px);
+}
+
+.pricing-card__badge {
+  align-self: flex-start;
+  padding: 6px 9px;
+  border: 1px solid rgba(98,248,223,.19);
+  border-radius: 999px;
+  color: #62f8df;
+  font-size: .69rem;
+  letter-spacing: .12em;
+}
+
+.pricing-card h2 { margin: 18px 0 5px; font-size: 1.8rem; }
+.pricing-card__tagline { min-height: 46px; color: #87969b; line-height: 1.5; }
+.pricing-card__price { display: flex; align-items: baseline; gap: 7px; margin: 24px 0 5px; }
+.pricing-card__price strong { font-size: 2.65rem; letter-spacing: -.04em; }
+.pricing-card__price span { color: #7f8e93; }
+.pricing-card__year-note { min-height: 22px; color: #62f8df; font-size: .78rem; }
+.pricing-card ul { list-style: none; padding: 0; margin: 24px 0 30px; display: grid; gap: 11px; }
+.pricing-card li { color: #b9c5c8; padding-left: 22px; position: relative; line-height: 1.45; }
+.pricing-card li::before { content: "◇"; color: #62f8df; position: absolute; left: 0; }
+.pricing-card .site-button { margin-top: auto; justify-content: center; }
+.pricing-loading { grid-column: 1 / -1; padding: 50px; text-align: center; color: #718086; }
+
+.pricing-current {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, .8fr);
+  gap: 28px;
+  padding: 24px;
+  border: 1px solid rgba(98,248,223,.18);
+  border-radius: 16px;
+  background: rgba(98,248,223,.035);
+}
+
+.pricing-current h2 { margin: 7px 0; }
+.pricing-current p, .pricing-usage small { color: #87969b; }
+.pricing-usage { align-self: center; }
+.pricing-usage__head { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 10px; }
+.pricing-usage__head strong { color: #62f8df; }
+.pricing-usage__track { height: 8px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; margin-bottom: 8px; }
+.pricing-usage__track i { display: block; height: 100%; width: 0; background: #62f8df; border-radius: inherit; transition: width .3s ease; }
+
+.pricing-explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.pricing-explain-card { padding: 22px; border: 1px solid rgba(255,255,255,.07); border-radius: 15px; background: rgba(255,255,255,.018); }
+.pricing-explain-card strong { color: #eafffb; }
+.pricing-explain-card p { color: #87969b; line-height: 1.65; margin-bottom: 0; }
+
+.pricing-table-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,.07); border-radius: 16px; }
+.pricing-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.pricing-table th, .pricing-table td { padding: 15px 18px; border-bottom: 1px solid rgba(255,255,255,.06); text-align: center; }
+.pricing-table th:first-child, .pricing-table td:first-child { text-align: left; }
+.pricing-table th { color: #62f8df; font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
+.pricing-table td { color: #aebabc; }
+.pricing-table tr:last-child td { border-bottom: 0; }
+
+.pricing-faq { max-width: 980px; }
+.pricing-faq details { border-top: 1px solid rgba(255,255,255,.08); padding: 18px 2px; }
+.pricing-faq details:last-child { border-bottom: 1px solid rgba(255,255,255,.08); }
+.pricing-faq summary { cursor: pointer; color: #e5eeee; font-weight: 600; }
+.pricing-faq p { color: #89979b; max-width: 820px; line-height: 1.7; }
+
+@media (max-width: 900px) {
+  .pricing-grid, .pricing-explain-grid { grid-template-columns: 1fr; }
+  .pricing-card { min-height: auto; }
+  .pricing-current { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .pricing-hero { padding-top: 72px; }
+  .pricing-beta { align-items: flex-start; flex-direction: column; }
+  .pricing-period { display: grid; width: 100%; }
+  .pricing-period button { text-align: center; }
+  .pricing-card { padding: 21px; }
+}

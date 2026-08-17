@@ -12,9 +12,9 @@ const FEATURE_LABELS = {
   screen_analysis: "AI-анализ экрана",
   proactive_reactions: "Контекстные и инициативные реакции",
   priority_ai_budget: "Повышенный AI-ресурс",
-  drawing_generation: "Генеративные функции по мере выпуска",
   experimental_features: "Экспериментальные AI-функции",
   priority_beta_access: "Приоритетный beta-доступ",
+  generation_credit_access: "Доступ к отдельным генеративным credits после запуска",
 };
 
 let billingPeriod = "month";

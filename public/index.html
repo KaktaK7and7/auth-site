@@ -12,6 +12,7 @@
     <link rel="icon" type="image/png" href="/images/Ziren.png" />
     <link rel="preload" as="image" href="/images/Ziren.png" />
     <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/nav-v1.css" />
 
     <meta property="og:title" content="Ziren — разработка цифровых продуктов" />
     <meta
@@ -46,17 +47,24 @@
           <nav class="site-nav__links" aria-label="Основная навигация" data-nav-links>
             <a href="/" aria-current="page">Главная</a>
             <a href="#about">О Ziren</a>
-            <a href="#community">Сообщество</a>
             <a href="/assistant.html">Ассистент</a>
             <a href="/features.html">Возможности</a>
             <a href="/pricing.html">Тарифы</a>
-            <a href="/friends.html">Друзья</a>
-            <a href="/messages.html">Сообщения</a>
+            <a href="#community">Сообщество</a>
           </nav>
 
-          <div class="site-nav__actions" data-auth-container>
-            <a class="site-button site-button--ghost" href="/login.html">Войти</a>
-            <a class="site-button site-button--primary site-button--compact" href="/register.html">Регистрация</a>
+          <div class="site-account-menu-host">
+            <div class="site-nav__actions" data-auth-container>
+              <a class="site-button site-button--ghost" href="/login.html">Войти</a>
+              <a class="site-button site-button--primary site-button--compact" href="/register.html">Регистрация</a>
+            </div>
+            <div class="site-account-menu" aria-label="Меню аккаунта">
+              <div class="site-account-menu__meta">Ziren Account</div>
+              <a href="/profile"><span>Профиль</span><span class="site-account-menu__accent">↗</span></a>
+              <a href="/friends.html"><span>Друзья</span><span>Network</span></a>
+              <a href="/messages.html"><span>Сообщения</span><span>Chat</span></a>
+              <a href="/pricing.html"><span>Мой тариф</span><span>Plan</span></a>
+            </div>
           </div>
         </div>
       </header>

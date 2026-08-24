@@ -15,7 +15,7 @@ test("Assistant capability manifest has unique feature and action ids", () => {
   assert.ok(Array.isArray(manifest.features));
   assert.ok(manifest.features.length >= 10);
   assert.equal(manifest.modes.snake.badge, "LOCAL · FREE");
-  assert.equal(manifest.modes.melissa.badge, "SMART · FUTURE PAID");
+  assert.equal(manifest.modes.melissa.badge, "SMART · PLUS / PRO");
 
   const featureIds = manifest.features.map((feature) => feature.feature_id);
   assert.equal(new Set(featureIds).size, featureIds.length);

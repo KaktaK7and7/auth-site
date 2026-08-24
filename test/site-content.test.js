@@ -12,6 +12,12 @@ function readPublicFile(fileName) {
 }
 
 
+function extractFirstNavigation(html) {
+  const match = html.match(/<nav[^>]*data-nav-links[^>]*>([\s\S]*?)<\/nav>/i);
+  return match ? match[1] : "";
+}
+
+
 test("home page presents Ziren as a company without assistant mascot content", () => {
   const home = readPublicFile("index.html");
 
@@ -26,26 +32,46 @@ test("home page presents Ziren as a company without assistant mascot content", (
 });
 
 
-test("assistant page owns Melissa details and personalized chat entry points", () => {
-  const assistant = readPublicFile("assistant.html");
+test("Ziren 1.0 global navigation stays compact and moves account actions out of the primary row", () => {
+  const home = readPublicFile("index.html");
+  const navigation = extractFirstNavigation(home);
 
-  assert.match(assistant, /id="companion"/);
-  assert.match(assistant, /Характер не выбирается кнопкой/);
-  assert.match(assistant, /Живой сюжет включён по умолчанию/);
-  assert.match(assistant, /Команды и общение — разная логика/);
-  assert.match(assistant, /class="assistant-logic__modes"/);
+  assert.match(home, /href="\/nav-v1\.css"/);
+  assert.match(home, /class="site-account-menu"/);
+  assert.match(home, /href="\/profile"/);
+  assert.match(home, /href="\/friends\.html"/);
+  assert.match(home, /href="\/messages\.html"/);
+  assert.match(home, /Мой тариф/);
+
+  const primaryLinks = navigation.match(/<a\b/gi) || [];
+  assert.ok(primaryLinks.length <= 6, `primary navigation has ${primaryLinks.length} links`);
+  assert.doesNotMatch(navigation, /href="\/friends\.html"/);
+  assert.doesNotMatch(navigation, /href="\/messages\.html"/);
+});
+
+
+test("assistant page reflects Ziren 1.0 routing, Melissa v2 and Chronicle redesign", () => {
+  const assistant = readPublicFile("assistant.html");
+  const navigation = extractFirstNavigation(assistant);
+
+  assert.match(assistant, /Змея выполняет\. Мелисса понимает/);
+  assert.match(assistant, /FREE · LOCAL/);
+  assert.match(assistant, /SMART · AI/);
+  assert.match(assistant, /structured actions/);
   assert.match(assistant, /data-assistant-chat-label/);
-  assert.match(assistant, /Что мы дорабатываем/);
+  assert.match(assistant, /id="companion"/);
+  assert.match(assistant, /Melissa v2/);
+  assert.match(assistant, /Chibi overlay/);
   assert.match(assistant, /id="chronicle"/);
-  assert.match(assistant, /Хроника связи/);
-  assert.match(assistant, /2045 года/);
-  assert.match(assistant, /Ветки не[\s\S]*сходятся обратно/);
-  assert.match(assistant, /Доверие, близость, самостоятельность/);
+  assert.match(assistant, /Chronicle v1/);
+  assert.match(assistant, /Память ≠ Хроника/);
   assert.match(assistant, /id="vision"/);
+  assert.match(assistant, /Анализ не равен праву нажимать/);
   assert.match(assistant, /Перевести видимый текст/);
-  assert.match(assistant, /Разобрать ошибку или интерфейс/);
-  assert.match(assistant, /Это не постоянное наблюдение/);
-  assert.match(assistant, /не добавляется в память компаньона/);
+
+  assert.doesNotMatch(navigation, /href="#vision"/);
+  assert.doesNotMatch(assistant, /выделять нужные элементы\s+рамками/i);
+  assert.doesNotMatch(assistant, /Сохранить в Холст/i);
 });
 
 

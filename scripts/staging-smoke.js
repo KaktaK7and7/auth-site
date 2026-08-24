@@ -217,20 +217,19 @@ async function runStagingSmoke({ baseUrl, token = "", semantic = false, logger =
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${body?.error || "classifier failed"}`);
         }
-        if (!body?.ok || !body.route) {
+        if (!body?.ok || typeof body.matched !== "boolean") {
           throw new Error("Classifier response is invalid");
         }
-        const route = body.route;
         if (
-          route.matched !== true
-          || route.feature_id !== "system.volume"
-          || route.action_id !== "volume.set"
+          body.matched !== true
+          || body.feature_id !== "system.volume"
+          || body.action_id !== "volume.set"
         ) {
           throw new Error(
-            `Unexpected route: matched=${route.matched} ${route.feature_id || ""}/${route.action_id || ""}`,
+            `Unexpected route: matched=${body.matched} ${body.feature_id || ""}/${body.action_id || ""}`,
           );
         }
-        return `system.volume/volume.set confidence=${route.confidence ?? "?"}`;
+        return `system.volume/volume.set confidence=${body.confidence ?? "?"}`;
       });
     }
   }

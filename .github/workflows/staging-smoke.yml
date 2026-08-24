@@ -4,18 +4,20 @@ on:
   push:
     branches:
       - agent/subscriptions-v1-2026-08-17
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: staging-public-smoke-${{ github.ref }}
+  group: staging-public-smoke-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   staging-public-smoke:
     name: Railway staging public contracts
+    if: github.event_name != 'pull_request' || github.head_ref == 'agent/subscriptions-v1-2026-08-17'
     runs-on: ubuntu-latest
     timeout-minutes: 8
 

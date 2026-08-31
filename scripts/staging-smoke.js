@@ -13,10 +13,20 @@ function normalizeBaseUrl(value) {
   return parsed.toString().replace(/\/$/, "");
 }
 
+function normalizeCommit(value) {
+  const commit = String(value || "").trim().toLowerCase();
+  if (!commit) return "";
+  if (!/^[0-9a-f]{7,64}$/.test(commit)) {
+    throw new Error("Expected commit must be a hexadecimal git SHA/prefix");
+  }
+  return commit;
+}
+
 function parseArgs(values) {
   const result = {
     baseUrl: env.ZIREN_STAGING_URL || DEFAULT_BASE_URL,
     token: env.ZIREN_DESKTOP_TOKEN || "",
+    expectedCommit: env.ZIREN_EXPECTED_STAGING_COMMIT || "",
     semantic: false,
   };
 
@@ -27,6 +37,9 @@ function parseArgs(values) {
       index += 1;
     } else if (value === "--token") {
       result.token = values[index + 1] || "";
+      index += 1;
+    } else if (value === "--expected-commit") {
+      result.expectedCommit = values[index + 1] || "";
       index += 1;
     } else if (value === "--semantic") {
       result.semantic = true;
@@ -39,6 +52,7 @@ function parseArgs(values) {
 
   result.baseUrl = normalizeBaseUrl(result.baseUrl);
   result.token = String(result.token || "").trim();
+  result.expectedCommit = normalizeCommit(result.expectedCommit);
   return result;
 }
 
@@ -63,6 +77,25 @@ async function requestJson(baseUrl, path, options = {}) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function assertReleaseInfo(body, expectedCommit = "") {
+  if (!body || typeof body !== "object") {
+    throw new Error("Release fingerprint is not a JSON object");
+  }
+  if (body.schema_version !== 1 || body.service !== "ziren-auth-site") {
+    throw new Error("Unexpected release fingerprint contract");
+  }
+  const deployedCommit = String(body.commit || "").trim().toLowerCase();
+  if (expectedCommit) {
+    if (!deployedCommit) {
+      throw new Error(`Deployment does not expose a commit; expected ${expectedCommit}`);
+    }
+    if (!deployedCommit.startsWith(expectedCommit) && !expectedCommit.startsWith(deployedCommit)) {
+      throw new Error(`Stale deployment: expected ${expectedCommit}, got ${deployedCommit}`);
+    }
+  }
+  return body;
 }
 
 function assertManifest(manifest) {
@@ -129,8 +162,9 @@ function semanticCapabilitiesFromManifest(manifest) {
     .filter((feature) => feature.actions.length > 0);
 }
 
-async function runStagingSmoke({ baseUrl, token = "", semantic = false, logger = console }) {
+async function runStagingSmoke({ baseUrl, token = "", expectedCommit = "", semantic = false, logger = console }) {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+  const expected = normalizeCommit(expectedCommit);
   const results = [];
 
   async function check(name, callback) {
@@ -146,6 +180,14 @@ async function runStagingSmoke({ baseUrl, token = "", semantic = false, logger =
   }
 
   let manifest = null;
+  let releaseInfo = null;
+
+  await check("deployment fingerprint", async () => {
+    const { response, body } = await requestJson(normalizedBaseUrl, "/release.json");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    releaseInfo = assertReleaseInfo(body, expected);
+    return `${releaseInfo.commit || "unknown commit"} ${releaseInfo.environment || "unknown env"}`;
+  });
 
   await check("subscription catalog", async () => {
     const { response, body } = await requestJson(normalizedBaseUrl, "/api/subscriptions/catalog");
@@ -237,13 +279,15 @@ async function runStagingSmoke({ baseUrl, token = "", semantic = false, logger =
   return {
     ok: !results.some((result) => result.status === "fail"),
     base_url: normalizedBaseUrl,
+    expected_commit: expected || null,
+    deployed_commit: releaseInfo?.commit || null,
     semantic_requested: Boolean(semantic),
     results,
   };
 }
 
 function printHelp() {
-  console.log(`Ziren staging smoke\n\nUsage:\n  node scripts/staging-smoke.js [--base-url URL] [--token TOKEN] [--semantic]\n\nEnvironment:\n  ZIREN_STAGING_URL   Override staging origin\n  ZIREN_DESKTOP_TOKEN Temporary desktop bearer token for authenticated checks\n\nNotes:\n  Public catalog/manifest checks never require credentials.\n  --semantic performs one real AI classifier request and may consume included AI resource.\n  This script never executes a local PC-control action.`);
+  console.log(`Ziren staging smoke\n\nUsage:\n  node scripts/staging-smoke.js [--base-url URL] [--token TOKEN] [--expected-commit SHA] [--semantic]\n\nEnvironment:\n  ZIREN_STAGING_URL             Override staging origin\n  ZIREN_DESKTOP_TOKEN           Temporary desktop bearer token for authenticated checks\n  ZIREN_EXPECTED_STAGING_COMMIT Expected deployed git SHA/prefix\n\nNotes:\n  Public fingerprint/catalog/manifest checks never require credentials.\n  --semantic performs one real AI classifier request and may consume included AI resource.\n  This script never executes a local PC-control action.`);
 }
 
 async function main() {
@@ -270,7 +314,9 @@ module.exports = {
   DEFAULT_BASE_URL,
   assertCatalog,
   assertManifest,
+  assertReleaseInfo,
   normalizeBaseUrl,
+  normalizeCommit,
   parseArgs,
   runStagingSmoke,
   semanticCapabilitiesFromManifest,

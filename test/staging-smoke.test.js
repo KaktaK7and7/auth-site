@@ -35,6 +35,15 @@ function testManifest() {
   };
 }
 
+function testReleaseInfo() {
+  return {
+    schema_version: 1,
+    service: "ziren-auth-site",
+    commit: "abcdef1234567890",
+    environment: "test",
+  };
+}
+
 async function withServer(handler, callback) {
   const server = http.createServer(handler);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -58,6 +67,10 @@ test("staging smoke validates public catalog/manifest without credentials or AI 
 
   const report = await withServer((req, res) => {
     res.setHeader("Content-Type", "application/json");
+    if (req.url === "/release.json") {
+      res.end(JSON.stringify(testReleaseInfo()));
+      return;
+    }
     if (req.url === "/api/subscriptions/catalog") {
       res.end(JSON.stringify({
         ok: true,
@@ -81,7 +94,7 @@ test("staging smoke validates public catalog/manifest without credentials or AI 
   assert.equal(semanticCalls, 0);
   assert.deepEqual(
     report.results.map((item) => item.status),
-    ["pass", "pass", "skip"],
+    ["pass", "pass", "pass", "skip"],
   );
 });
 
@@ -93,6 +106,10 @@ test("authenticated semantic smoke sends a bounded classifier request but no loc
   const report = await withServer((req, res) => {
     res.setHeader("Content-Type", "application/json");
 
+    if (req.url === "/release.json") {
+      res.end(JSON.stringify(testReleaseInfo()));
+      return;
+    }
     if (req.url === "/api/subscriptions/catalog") {
       res.end(JSON.stringify({
         ok: true,

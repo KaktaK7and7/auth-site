@@ -12,6 +12,7 @@
     <link rel="icon" type="image/png" href="/images/Ziren.png" />
     <link rel="preload" as="image" href="/images/Ziren.png" />
     <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/nav-v1.css" />
 
     <meta property="og:title" content="Ziren — разработка цифровых продуктов" />
     <meta
@@ -46,21 +47,24 @@
           <nav class="site-nav__links" aria-label="Основная навигация" data-nav-links>
             <a href="/" aria-current="page">Главная</a>
             <a href="#about">О Ziren</a>
-            <a href="#community">Сообщество</a>
             <a href="/assistant.html">Ассистент</a>
             <a href="/features.html">Возможности</a>
-            <a href="/friends.html">Друзья</a>
-            <a href="/messages.html">Сообщения</a>
+            <a href="/pricing.html">Тарифы</a>
+            <a href="#community">Сообщество</a>
           </nav>
 
-          <div class="site-nav__actions" data-auth-container>
-            <a class="site-button site-button--ghost" href="/login.html">Войти</a>
-            <a
-              class="site-button site-button--primary site-button--compact"
-              href="/register.html"
-            >
-              Регистрация
-            </a>
+          <div class="site-account-menu-host">
+            <div class="site-nav__actions" data-auth-container>
+              <a class="site-button site-button--ghost" href="/login.html">Войти</a>
+              <a class="site-button site-button--primary site-button--compact" href="/register.html">Регистрация</a>
+            </div>
+            <div class="site-account-menu" aria-label="Меню аккаунта">
+              <div class="site-account-menu__meta">Ziren Account</div>
+              <a href="/profile"><span>Профиль</span><span class="site-account-menu__accent">↗</span></a>
+              <a href="/friends.html"><span>Друзья</span><span>Network</span></a>
+              <a href="/messages.html"><span>Сообщения</span><span>Chat</span></a>
+              <a href="/pricing.html"><span>Мой тариф</span><span>Plan</span></a>
+            </div>
           </div>
         </div>
       </header>
@@ -77,20 +81,14 @@
                 новое.
               </p>
               <div class="site-hero__actions">
-                <a class="site-button site-button--primary" href="/register.html">
-                  Создать аккаунт
-                </a>
-                <a class="site-button site-button--ghost" href="#about">
-                  Узнать о Ziren
-                </a>
+                <a class="site-button site-button--primary" href="/register.html">Создать аккаунт</a>
+                <a class="site-button site-button--ghost" href="#about">Узнать о Ziren</a>
               </div>
             </div>
 
             <div class="company-hero__identity" aria-label="Логотип Ziren">
               <div class="company-hero__orbit" aria-hidden="true"></div>
-              <div class="company-hero__logo">
-                <img src="/images/Ziren.png" alt="Ziren" />
-              </div>
+              <div class="company-hero__logo"><img src="/images/Ziren.png" alt="Ziren" /></div>
               <strong>ZIREN</strong>
               <span>SOFTWARE · INTELLIGENCE · COMMUNITY</span>
             </div>
@@ -105,27 +103,10 @@
             </div>
 
             <div class="company-about__copy" data-reveal>
-              <p>
-                Ziren начался с идеи создать что-то своё. В начале у него не
-                было ни чёткой концепции, ни готового плана реализации.
-              </p>
-              <p>
-                Ziren и я — одно целое, нас нельзя разделить. Ziren — воплощение
-                моих идей и амбиций.
-              </p>
-              <p>
-                Сейчас я работаю над персональным ассистентом, который не просто
-                будет выполнять команды, но и станет частью вашей жизни. Я хочу
-                сделать его уникальным для каждого пользователя — на основе
-                истории, которую вы прошли вместе, и вашей манеры общения.
-              </p>
-              <p>
-                Я развиваю проект постепенно. Всё начиналось с простого
-                ассистента, который выполняет команды. Сейчас я создаю
-                расширяемую экосистему, где главный упор сделан на
-                индивидуальный искусственный интеллект, социальные возможности
-                для взаимодействия пользователей и открытость к новым идеям.
-              </p>
+              <p>Ziren начался с идеи создать что-то своё. В начале у него не было ни чёткой концепции, ни готового плана реализации.</p>
+              <p>Ziren и я — одно целое, нас нельзя разделить. Ziren — воплощение моих идей и амбиций.</p>
+              <p>Сейчас я работаю над персональным ассистентом, который не просто будет выполнять команды, но и станет частью вашей жизни. Я хочу сделать его уникальным для каждого пользователя — на основе истории, которую вы прошли вместе, и вашей манеры общения.</p>
+              <p>Я развиваю проект постепенно. Всё начиналось с простого ассистента, который выполняет команды. Сейчас я создаю расширяемую экосистему, где главный упор сделан на индивидуальный искусственный интеллект, социальные возможности для взаимодействия пользователей и открытость к новым идеям.</p>
             </div>
 
             <div class="company-facts" data-reveal>
@@ -139,84 +120,43 @@
         <section class="site-section site-section--panel" id="directions">
           <div class="site-container">
             <div class="site-section__head site-section__head--split" data-reveal>
-              <div>
-                <span class="site-eyebrow">Чем занимается Ziren</span>
-                <h2>Направления разработки</h2>
-              </div>
-              <p>
-                Мы работаем над технологиями, которые могут использовать одну
-                учётную запись, общий профиль и согласованные правила работы с
-                данными.
-              </p>
+              <div><span class="site-eyebrow">Чем занимается Ziren</span><h2>Направления разработки</h2></div>
+              <p>Мы работаем над технологиями, которые могут использовать одну учётную запись, общий профиль и согласованные правила работы с данными.</p>
             </div>
 
             <div class="site-grid site-grid--4">
-              <article class="site-card" data-reveal>
-                <span class="site-card__index">01 / DESKTOP</span>
-                <h3>Приложения для компьютера</h3>
-                <p>Полноценные Windows-продукты с продуманным интерфейсом, локальными функциями и понятными настройками.</p>
-              </article>
-              <article class="site-card" data-reveal>
-                <span class="site-card__index">02 / INTERFACES</span>
-                <h3>Интеллектуальные интерфейсы</h3>
-                <p>Голос, автоматизация и AI там, где они действительно сокращают лишние действия и помогают быстрее получить результат.</p>
-              </article>
-              <article class="site-card" data-reveal>
-                <span class="site-card__index">03 / IDENTITY</span>
-                <h3>Аккаунт и профиль</h3>
-                <p>Единые данные пользователя, настройки приватности, достижения и синхронизация между сайтом и приложениями.</p>
-              </article>
-              <article class="site-card" data-reveal>
-                <span class="site-card__index">04 / NETWORK</span>
-                <h3>Сообщество и сервисы</h3>
-                <p>Друзья, личные сообщения, группы и единая социальная сеть между сайтом и приложением Ziren.</p>
-              </article>
+              <article class="site-card" data-reveal><span class="site-card__index">01 / DESKTOP</span><h3>Приложения для компьютера</h3><p>Полноценные Windows-продукты с продуманным интерфейсом, локальными функциями и понятными настройками.</p></article>
+              <article class="site-card" data-reveal><span class="site-card__index">02 / INTERFACES</span><h3>Интеллектуальные интерфейсы</h3><p>Голос, автоматизация и AI там, где они действительно сокращают лишние действия и помогают быстрее получить результат.</p></article>
+              <article class="site-card" data-reveal><span class="site-card__index">03 / IDENTITY</span><h3>Аккаунт и профиль</h3><p>Единые данные пользователя, настройки приватности, достижения и синхронизация между сайтом и приложениями.</p></article>
+              <article class="site-card" data-reveal><span class="site-card__index">04 / NETWORK</span><h3>Сообщество и сервисы</h3><p>Друзья, личные сообщения, группы и единая социальная сеть между сайтом и приложением Ziren.</p></article>
             </div>
           </div>
         </section>
 
         <section class="site-section">
           <div class="site-container company-principles">
-            <div class="site-section__head" data-reveal>
-              <span class="site-eyebrow">Подход к работе</span>
-              <h2>На чём держится проект</h2>
-            </div>
+            <div class="site-section__head" data-reveal><span class="site-eyebrow">Подход к работе</span><h2>На чём держится проект</h2></div>
             <div class="company-principles__list">
-              <article data-reveal>
-                <span>01</span>
-                <div><h3>Польза важнее количества функций</h3><p>Новая возможность имеет смысл только тогда, когда она решает конкретную задачу и работает предсказуемо.</p></div>
-              </article>
-              <article data-reveal>
-                <span>02</span>
-                <div><h3>Данные остаются под контролем пользователя</h3><p>Публичность профиля, участие в ленте и будущий учёт активности включаются отдельно и добровольно.</p></div>
-              </article>
-              <article data-reveal>
-                <span>03</span>
-                <div><h3>Разработка без выдуманных обещаний</h3><p>На страницах продуктов мы отдельно показываем готовые возможности, ограничения и то, что находится в работе.</p></div>
-              </article>
+              <article data-reveal><span>01</span><div><h3>Польза важнее количества функций</h3><p>Новая возможность имеет смысл только тогда, когда она решает конкретную задачу и работает предсказуемо.</p></div></article>
+              <article data-reveal><span>02</span><div><h3>Данные остаются под контролем пользователя</h3><p>Публичность профиля, участие в ленте и будущий учёт активности включаются отдельно и добровольно.</p></div></article>
+              <article data-reveal><span>03</span><div><h3>Разработка без выдуманных обещаний</h3><p>На страницах продуктов мы отдельно показываем готовые возможности, ограничения и то, что находится в работе.</p></div></article>
             </div>
           </div>
         </section>
 
         <section class="community-strip" id="community">
-          <div class="site-container community-strip__head">
-            <strong>Участники Ziren</strong>
-            <span data-community-status>Загружаем реальные профили сообщества…</span>
-          </div>
-          <div class="community-ticker__viewport">
-            <div class="community-ticker" data-community-ticker>Загружаем участников…</div>
-          </div>
+          <div class="site-container community-strip__head"><strong>Участники Ziren</strong><span data-community-status>Загружаем реальные профили сообщества…</span></div>
+          <div class="community-ticker__viewport"><div class="community-ticker" data-community-ticker>Загружаем участников…</div></div>
         </section>
 
         <section class="site-section site-section--tight">
           <div class="site-container">
             <div class="feedback-banner" data-reveal>
-              <div>
-                <span class="site-eyebrow">Ziren Assistant</span>
-                <h2>Посмотри актуальный список функций</h2>
-                <p>Отдельный каталог показывает, какие действия доступны локально, какие поддерживает умный режим, и какие возможности ещё проходят тестирование.</p>
+              <div><span class="site-eyebrow">Ziren Assistant</span><h2>Функции и тарифы без скрытых условий</h2><p>Посмотри актуальные возможности, режимы работы и принципы расчёта включённого AI-ресурса.</p></div>
+              <div class="site-hero__actions">
+                <a class="site-button site-button--primary" href="/features.html">Возможности</a>
+                <a class="site-button site-button--ghost" href="/pricing.html">Тарифы</a>
               </div>
-              <a class="site-button site-button--primary" href="/features.html">Открыть возможности</a>
             </div>
           </div>
         </section>
@@ -224,11 +164,7 @@
         <section class="site-section site-section--tight">
           <div class="site-container">
             <div class="feedback-banner" data-reveal>
-              <div>
-                <span class="site-eyebrow">Обратная связь</span>
-                <h2>Есть идея для Ziren?</h2>
-                <p>Предложи новую функцию, расскажи, чего тебе не хватает, или поделись впечатлениями от проекта. Я читаю обратную связь и учитываю её при выборе следующих направлений разработки.</p>
-              </div>
+              <div><span class="site-eyebrow">Обратная связь</span><h2>Есть идея для Ziren?</h2><p>Предложи новую функцию, расскажи, чего тебе не хватает, или поделись впечатлениями от проекта. Я читаю обратную связь и учитываю её при выборе следующих направлений разработки.</p></div>
               <a class="site-button site-button--ghost" href="/contacts.html">Предложить идею или оставить отзыв</a>
             </div>
           </div>
@@ -240,10 +176,7 @@
               <span class="site-eyebrow">Ziren Network</span>
               <h2>Один профиль, друзья и сообщения на всех устройствах</h2>
               <p>Добавляй пользователей в друзья, общайся в личных чатах и группах. Те же данные доступны в браузере и в desktop-приложении.</p>
-              <div class="site-hero__actions">
-                <a class="site-button site-button--primary" href="/friends.html">Открыть друзей</a>
-                <a class="site-button site-button--ghost" href="/messages.html">Открыть сообщения</a>
-              </div>
+              <div class="site-hero__actions"><a class="site-button site-button--primary" href="/friends.html">Открыть друзей</a><a class="site-button site-button--ghost" href="/messages.html">Открыть сообщения</a></div>
             </div>
           </div>
         </section>
@@ -252,28 +185,11 @@
       <footer class="site-footer">
         <div class="site-container">
           <div class="site-footer__grid">
-            <div class="site-footer__brand">
-              <a class="site-brand" href="/"><img src="/images/Ziren.png" alt="" /><span>ZIREN</span></a>
-              <p>Независимый технологический проект. Разрабатываем desktop-приложения, интеллектуальные интерфейсы и собственные онлайн-сервисы.</p>
-            </div>
-            <div class="site-footer__column">
-              <strong>Network</strong>
-              <a href="/friends.html">Друзья</a>
-              <a href="/messages.html">Сообщения</a>
-              <a href="/profile">Профиль</a>
-            </div>
-            <div class="site-footer__column">
-              <strong>Информация</strong>
-              <a href="/features.html">Возможности Assistant</a>
-              <a href="/privacy.html">Конфиденциальность</a>
-              <a href="/terms.html">Условия использования</a>
-              <a href="/contacts.html">Контакты</a>
-            </div>
+            <div class="site-footer__brand"><a class="site-brand" href="/"><img src="/images/Ziren.png" alt="" /><span>ZIREN</span></a><p>Независимый технологический проект. Разрабатываем desktop-приложения, интеллектуальные интерфейсы и собственные онлайн-сервисы.</p></div>
+            <div class="site-footer__column"><strong>Network</strong><a href="/friends.html">Друзья</a><a href="/messages.html">Сообщения</a><a href="/profile">Профиль</a></div>
+            <div class="site-footer__column"><strong>Информация</strong><a href="/features.html">Возможности Assistant</a><a href="/pricing.html">Тарифы</a><a href="/privacy.html">Конфиденциальность</a><a href="/terms.html">Условия использования</a><a href="/contacts.html">Контакты</a></div>
           </div>
-          <div class="site-footer__bottom">
-            <span>© 2026 Ziren. Проект находится в разработке.</span>
-            <span>Версия сайта: Alpha</span>
-          </div>
+          <div class="site-footer__bottom"><span>© 2026 Ziren. Проект находится в разработке.</span><span>Версия сайта: Beta</span></div>
         </div>
       </footer>
     </div>

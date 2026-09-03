@@ -1,11 +1,13 @@
 {
   "name": "auth-site",
   "version": "1.0.0",
-  "description": "Simple auth site for Railway",
+  "description": "Ziren auth, profile, network and subscription gateway",
   "main": "server.js",
   "scripts": {
+    "prestart": "node scripts/write-release-info.js",
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "smoke:staging": "node scripts/staging-smoke.js"
   },
   "engines": {
     "node": ">=18"

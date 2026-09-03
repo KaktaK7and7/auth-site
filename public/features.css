@@ -232,6 +232,32 @@
   overflow-wrap: anywhere;
 }
 
+.feature-action__routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.feature-action__route {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 2px 6px;
+  border: 1px solid rgba(133, 255, 237, 0.16);
+  color: #85e9da;
+  background: rgba(78, 255, 225, 0.035);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.feature-action__route--snake {
+  border-color: rgba(123, 255, 172, 0.18);
+  color: #9ae9b4;
+  background: rgba(97, 255, 151, 0.03);
+}
+
 .feature-action em {
   align-self: center;
   max-width: 220px;

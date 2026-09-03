@@ -30,7 +30,14 @@ function modeCard(mode, key) {
   return article;
 }
 
-function actionNode(action) {
+function routeBadge(label, snake = false) {
+  const badge = document.createElement("b");
+  badge.className = `feature-action__route ${snake ? "feature-action__route--snake" : ""}`;
+  badge.textContent = label;
+  return badge;
+}
+
+function actionNode(action, feature) {
   const item = document.createElement("li");
   item.className = "feature-action";
 
@@ -39,7 +46,15 @@ function actionNode(action) {
   title.textContent = action.title;
   const id = document.createElement("code");
   id.textContent = action.id;
-  copy.append(title, id);
+
+  const routes = document.createElement("span");
+  routes.className = "feature-action__routes";
+  const snake = typeof action.snake === "boolean" ? action.snake : Boolean(feature.snake);
+  const melissa = typeof action.melissa === "boolean" ? action.melissa : Boolean(feature.melissa);
+  if (snake) routes.append(routeBadge("ЗМЕЯ", true));
+  if (melissa) routes.append(routeBadge("МЕЛИССА"));
+
+  copy.append(title, id, routes);
 
   const example = document.createElement("em");
   example.textContent = action.example ? `«${action.example}»` : "";
@@ -104,7 +119,7 @@ function featureCard(feature) {
 
   const actions = document.createElement("ul");
   actions.className = "feature-actions";
-  (feature.actions || []).forEach((action) => actions.append(actionNode(action)));
+  (feature.actions || []).forEach((action) => actions.append(actionNode(action, feature)));
   article.append(actions);
 
   if (feature.note) {

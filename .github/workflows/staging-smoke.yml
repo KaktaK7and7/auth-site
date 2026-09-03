@@ -1,0 +1,53 @@
+name: Staging public smoke
+
+on:
+  push:
+    branches:
+      - agent/subscriptions-v1-2026-08-17
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-public-smoke-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-public-smoke:
+    name: Railway staging public contracts
+    if: github.event_name != 'pull_request' || github.head_ref == 'agent/subscriptions-v1-2026-08-17'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for Railway staging and verify public contracts
+        shell: bash
+        env:
+          ZIREN_STAGING_URL: https://auth-site-p0-security-test.up.railway.app
+        run: |
+          set -u
+          for attempt in $(seq 1 15); do
+            echo "Staging smoke attempt ${attempt}/15"
+            if npm run smoke:staging; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 15 ]; then
+              sleep 20
+            fi
+          done
+          echo "Staging did not expose the expected public release contracts in time."
+          exit 1
